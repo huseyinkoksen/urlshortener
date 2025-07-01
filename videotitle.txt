@@ -1,0 +1,41 @@
+How I Built a Modern URL Shortener with Analytics Dashboard (ASP.NET Core + MongoDB)
+
+---
+
+Video Recording Outline:
+
+1. **Introduction**
+   - Briefly introduce yourself and the project goal
+   - Show a quick demo of the finished product (dashboard, short link, analytics)
+
+2. **Project Overview**
+   - Explain the tech stack (ASP.NET Core, MongoDB, HTML/CSS/JS)
+   - Show the project folder structure
+
+3. **Setting Up the Backend**
+   - Walk through installing .NET SDK and MongoDB
+   - Show how to configure `appsettings.json`
+   - Build and run the backend API
+   - Test API endpoints with Postman or browser
+
+4. **Frontend Dashboard**
+   - Open and explain `dashboard.html`
+   - Show how it connects to the backend
+   - Demonstrate login, link creation, and analytics
+
+5. **Key Features**
+   - Highlight URL shortening, analytics, user authentication, and rate limiting
+   - Show real-time dashboard updates
+
+6. **Deployment**
+   - Briefly show Docker/Docker Compose setup
+   - Explain how to run the project in containers
+
+7. **Troubleshooting & Tips**
+   - Mention common issues and how to solve them
+   - Point to documentation and scripts
+
+8. **Conclusion**
+   - Recap what was built
+   - Invite viewers to try the project or contribute
+   - Thank viewers and suggest subscribing 

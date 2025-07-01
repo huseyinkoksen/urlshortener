@@ -1,0 +1,23 @@
+services:
+  mongo:
+    image: mongo:6.0
+    restart: always
+    ports:
+      - 27017:27017
+    volumes:
+      - mongo_data:/data/db
+  backend:
+    build:
+      context: ./Urlshortener.Api
+      dockerfile: Dockerfile
+    depends_on:
+      - mongo
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - MongoDbSettings__ConnectionString=mongodb://mongo:27017
+      - MongoDbSettings__DatabaseName=UrlShortenerDb
+    ports:
+      - 8080:8080
+    restart: always
+volumes:
+  mongo_data: 

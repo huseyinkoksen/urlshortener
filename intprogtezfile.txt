@@ -1,0 +1,1537 @@
+Proje Yönetim Sistemi  
+Web-Site Geliştirmesi 
+İnternet Programlama Final Projesi 
+Egemen Kağan Duman 
+Numara: 18155050 
+MERSİN ÜNİVERSİTESİ 
+BİLGİSAYAR MÜHENDİSLİĞİ BÖLÜMÜ 
+DANIŞMAN 
+DR. ÖĞR. ÜYESİ / DOÇ. DR. / PROF. DR. ADI VE SOYADI 
+MERSİN 
+OCAK - 2022 
+1 
+GİRİŞ 
+Yazılım geliştirme alanında proje yönetimi ve görev takip sistemlerinin önemi her geçen gün 
+artmaktadır. Ekiplerin uzaktan çalıştığı, farklı zaman dilimlerinde görev yaptığı ve çok sayıda 
+proje üzerinde çalıştığı günümüz iş dünyasında etkili bir görev yönetim sistemi işletmeler için 
+vazgeçilmez bir ihtiyaç haline gelmiştir. Bu çalışmada geliştirilen "Task Management 
+System" adlı web tabanlı uygulama, bu ihtiyaca karşılık verebilmek amacıyla modern 
+teknolojilerle yapılandırılmıştır. 
+Projenin temel amacı, kullanıcıların birden fazla proje oluşturabilmesini, bu projelere 
+görevler atayabilmesini, görevleri farklı aşamalarda takip edebilmesini ve ekip üyeleriyle iş 
+birliği yapabilmesini sağlamaktır. Uygulama kullanıcı kimlik doğrulamasını JSON Web 
+Token (JWT) ile sağlamakta; görevleri sürükle-bırak yöntemiyle yönetmeye olanak 
+sunmakta; kullanıcının yaptığı her önemli işlemi kayıt altına almaktadır. 
+Geliştirme sürecinde .NET 8 tabanlı ASP.NET Core Web API, React & TypeScript, 
+MongoDB, Tailwind CSS, Docker ve NGINX gibi birçok farklı teknolojiden yararlanılmıştır. 
+Bu tezde hem frontend hem backend sistemin yapısı detaylı olarak incelenmiş, mimari 
+kararlar açıklanmış ve geliştirilen tüm işlevler yorumlanarak sunulmuştur. 
+2 
+ÖZET 
+Bu çalışma, kullanıcıların projeler oluşturarak bu projeler üzerinde görevler tanımlayabildiği 
+ve bu görevleri takip edip güncelleyebildiği web tabanlı bir görev yönetim sistemi 
+geliştirmeyi amaçlamaktadır. Projede kimlik doğrulama işlemleri JWT (JSON Web Token) ile 
+gerçekleştirilmiş, kullanıcı rollerine göre yetkilendirme mekanizmaları oluşturulmuştur. 
+Görevler, sütunlar içerisinde sürükle-bırak yöntemiyle görsel olarak yönetilmekte, kullanıcı 
+aktiviteleri detaylı bir şekilde loglanmaktadır. 
+Backend kısmında ASP.NET Core Web API mimarisi tercih edilmiş, MongoDB veritabanı 
+kullanılmış ve servis odaklı katmanlı yapı uygulanmıştır. Frontend tarafında ise React, 
+TypeScript ve Tailwind CSS ile responsive ve kullanıcı dostu bir arayüz oluşturulmuştur. 
+Proje Docker konteyneri ile çalıştırılmakta ve NGINX ile frontend dağıtımı yapılmaktadır. Bu 
+yönüyle sistem; güvenli, ölçeklenebilir ve modern web uygulama standartlarına uygun bir 
+yapı sunmaktadır. 
+3 
+SUMMARY (English Abstract) 
+This study presents the development of a web-based task management system that enables 
+users to create projects, define tasks, assign responsibilities, and monitor progress in a 
+collaborative environment. Authentication is implemented using JWT (JSON Web Token), 
+and role-based authorization mechanisms are integrated. Tasks are visually managed through 
+drag-and-drop functionality within columns, and user activities are comprehensively logged. 
+On the backend side, the system is built using ASP.NET Core Web API with a layered and 
+service-oriented architecture. MongoDB is used as the NoSQL database. The frontend is 
+implemented with React, TypeScript, and Tailwind CSS to deliver a responsive and 
+user-friendly interface. The entire system runs inside Docker containers and is served using 
+NGINX, following modern deployment best practices. This architecture offers a secure, 
+modular, and scalable web application framework. 
+4 
+1. KULLANILAN TEKNOLOJİLER VE 
+TEMEL KAVRAMLAR 
+Bu bölümde, Task Management System projesinde kullanılan tüm temel teknolojiler, kavramlar ve 
+mimari yaklaşımlar detaylı bir şekilde ele alınmaktadır. Her teknoloji kendi bağlamında neden tercih 
+edildiği, nasıl entegre edildiği ve uygulamada nasıl işlev gördüğüyle birlikte açıklanmıştır. 
+1.1 JSON Web Token (JWT) 
+JSON Web Token (JWT), kimlik doğrulama ve yetkilendirme işlemlerinde kullanılan bir açık 
+standarttır. Özellikle RESTful servisler ile çalışan sistemlerde, kullanıcıya oturum açma işleminden 
+sonra bir token verilerek sonraki tüm taleplerde bu token üzerinden kimlik doğrulaması yapılır. 
+JWT şu üç ana bileşenden oluşur: 
+● Header: Kullanılan algoritmayı ve token tipini tanımlar (örneğin HS256). 
+● Payload: Kullanıcıyla ilgili bilgileri (claims) içerir. Örneğin userId, email, role gibi. 
+● Signature: Token’ın içeriğinin değiştirilmediğinden emin olmak için oluşturulan dijital 
+imzadır. 
+Bu projede kullanıcı oturum açtığında AuthController içerisindeki GenerateJwtToken() fonksiyonu 
+çalışarak ilgili kullanıcı bilgilerini taşıyan bir JWT oluşturur. Token içerisine şunlar dahil edilir: 
+● sub: kullanıcı kimliği 
+● email: kullanıcı e-posta adresi 
+● role: kullanıcının rolü (Admin, Manager, User) 
+● fullName: ad soyad bilgisi 
+5 
+Token oluşturulduktan sonra istemciye döndürülür ve React frontend tarafında localStorage içerisine 
+kaydedilir. Axios interceptor vasıtasıyla her HTTP isteği öncesinde Authorization: Bearer <token> 
+formatında otomatik olarak gönderilir. 
+Backend tarafında JwtBearer middleware’i sayesinde gelen isteklerde token doğrulanır, claim'ler 
+kontrol edilir ve kullanıcıya ait bilgiler HttpContext.User.Claims üzerinden alınabilir. 
+1.2 RESTful API Mimarisi 
+REST (Representational State Transfer), dağıtık sistemlerde kaynaklara erişmek için kullanılan bir 
+mimari yaklaşımdır. RESTful API'ler, HTTP protokolünü kullanarak kaynaklara erişim sağlar. 
+REST prensipleri bu projede şu şekilde uygulanmıştır: 
+● GET: Veri çekme işlemleri (örneğin /api/v1/tasks, /api/v1/projects) 
+● POST: Yeni veri oluşturma (örneğin /api/v1/users, /api/v1/columns) 
+● PUT: Mevcut veriyi güncelleme (örneğin /api/v1/projects/{id}) 
+● PATCH: Verinin yalnızca belirli alanlarını güncelleme (örneğin /api/v1/tasks/{id}/status) 
+● DELETE: Veri silme işlemi (örneğin /api/v1/tasks/{id}) 
+Bu yapı sayesinde frontend ile backend arasında anlamlı, sade ve genişletilebilir bir iletişim 
+kurulmuştur. Her kaynak (Project, Task, User, Column, ActivityLog) kendi REST uç noktalarına 
+sahiptir. 
+1.3 MongoDB NoSQL Veritabanı 
+MongoDB, belge (document) odaklı, şemasız (schema-less) bir NoSQL veritabanıdır. JSON benzeri 
+verileri BSON (Binary JSON) formatında saklar. 
+Bu projede MongoDB, aşağıdaki koleksiyonları yönetmek için kullanılmıştır: 
+6 
+● Users → Kullanıcı verileri 
+● Projects → Projeler 
+● Tasks → Görevler 
+● Columns → Sütun yapıları 
+● ActivityLogs → Kullanıcı eylem geçmişi 
+● Comments → Görev yorumları 
+MongoDB’nin projede sağladığı avantajlar: 
+● Şemasız yapı sayesinde esnek veri yönetimi. 
+● BsonRepresentation ile ObjectId alanlarının kolay yönetimi. 
+● EnumSerializer ile Status, Priority, Role gibi alanların string formatta saklanması. 
+● Indexleme: Performansı artırmak için MongoDbContext içerisinde CreateIndexesAsync() ile 
+gerekli alanlara index ataması yapılır. 
+● Embedded Documents: Görev alt görevleri (subtasks) ve etiketleri (labels) tek belgede 
+tutulur. 
+Tüm bu işlemler MongoDbContext sınıfı üzerinden merkezi şekilde yönetilir. 
+1.4 React ve Component Tabanlı Yapı 
+React, kullanıcı arayüzleri geliştirmek için kullanılan bir JavaScript kütüphanesidir. Proje içerisinde 
+TypeScript ile birlikte kullanılmıştır. 
+React’in öne çıkan özellikleri projeye şu katkıları sağlar: 
+7 
+● Component-based (bileşen tabanlı) mimari: UI parçalarının ayrı ayrı yönetilmesini ve 
+yeniden kullanılabilirliğini sağlar. 
+● useState: Bileşen içindeki değişken durumları yönetmek için kullanılır. 
+● useEffect: Bileşen yüklendiğinde veya state değiştiğinde çalışacak işlemler için kullanılır 
+(örnek: API'den veri çekme). 
+● useContext: AuthContext aracılığıyla tüm uygulama genelinde kullanıcı kimliğini, token’ı ve 
+login/logout işlemlerini yönetir. 
+Örnek bileşenler: 
+● Login.tsx, Register.tsx → Giriş ve kayıt ekranları. 
+● Dashboard.tsx → Proje kartlarının ve son görevlerin listelendiği ana sayfa. 
+● ProjectBoard.tsx → Trello benzeri görev panosu. Drag & drop özelliklidir. 
+● ActivityLogs.tsx → Kullanıcının sistem üzerindeki tüm eylemlerini listeler. 
+● Profile.tsx → Kullanıcının kişisel bilgilerini güncelleyebildiği ekran. 
+Tüm bu bileşenler, App.tsx dosyasında React Router ile yönlendirilmiştir. 
+1.5 Tailwind CSS ve Responsive Tasarım 
+Tailwind CSS, utility-first felsefesiyle CSS yazımını kolaylaştıran bir stil kütüphanesidir. Her HTML 
+elementi, stilini taşıyan sınıflarla tanımlanır. 
+Projeye sağladığı katkılar: 
+● Responsive tasarım: sm:, md:, lg: gibi sınıflarla mobil ve masaüstü uyumluluğu sağlanır. 
+8 
+● Konsistent UI: Renk, boşluk, yazı tipi gibi özellikler sınıf isimleriyle anında tanımlanabilir. 
+● tailwind.config.js dosyası üzerinden özel renkler (primary, danger, success) tanımlanmıştır. 
+Örnek Tailwind sınıfları: 
+<button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"> 
+Giriş Yap 
+</button> 
+Bu yapı sayesinde kullanıcı arayüzü hem modern, hem hızlı, hem de tutarlı bir şekilde geliştirilmiştir. 
+9 
+2. KATMANLI MİMARİ VE PROJE YAPISI 
+Modern web uygulamalarında, sürdürülebilir ve ölçeklenebilir bir yapı inşa edebilmek 
+için katmanlı mimari yaklaşımı tercih edilir. Task Management System projesi de bu 
+anlayışla tasarlanmış, farklı sorumlulukları olan dört ana katmana ayrılmıştır: API, 
+Application, Core ve Infrastructure. 
+Bu bölümde her katman detaylı şekilde ele alınacak, içindeki dosyaların işlevi, 
+aralarındaki ilişki ve kullanılan tasarım kalıpları açıklanacaktır. 
+2.1 API Katmanı (Presentation Layer) 
+Bu katman TaskManagement.API isimli proje klasörü altında yer alır. Temel amacı 
+istemciden (frontend) gelen HTTP isteklerini karşılamak ve uygun servis/metotlara 
+yönlendirmektir. 
+İçerdiği Öğeler: 
+● Controller Sınıfları: 
+○ AuthController.cs: Kullanıcı kayıt ve giriş işlemlerini yürütür. 
+○ UserController.cs: Profil bilgilerini getirir ve günceller. 
+○ ProjectController.cs: Proje oluşturma, güncelleme, silme işlemlerini 
+yapar. 
+○ TaskController.cs: Görev yönetimini sağlar. 
+10 
+○ ColumnController.cs: Görev sütunlarını (To Do, In Progress, Done) 
+kontrol eder. 
+○ ActivityLogController.cs: Kullanıcı eylemlerini getirir. 
+● Program.cs: 
+○ Uygulama başlatma noktasıdır. 
+○ Swagger, JWT, CORS, Rate Limiting, Serilog gibi servislerin 
+yapılandırıldığı yerdir. 
+○ MongoDB için BSON enum serializer’lar burada tanımlanır. 
+Öne Çıkan Yapılar: 
+[Authorize] 
+[Route("api/v{version:apiVersion}/projects")] 
+public class ProjectController : ControllerBase 
+● [Authorize] → Bu controller’a sadece giriş yapmış kullanıcılar erişebilir. 
+● [Route("api/v{version:apiVersion}/projects")] 
+desteklenir. 
+→ API versiyonlaması 
+● ControllerBase → ASP.NET Core’un temel controller sınıfıdır. 
+11 
+2.2 Application Katmanı (Service Layer & DTO) 
+TaskManagement.Application isimli proje klasörüdür. Bu katman veri taşıma 
+nesnelerini (DTO) ve servis arabirimlerini/uygulamalarını içerir. 
+Alt Bileşenler: 
+● DTOs/: Frontend ile iletişimde kullanılan sınıflar 
+○ UserDto, ProjectDto, TaskDto, LabelDto, CommentDto vb. 
+● Services/: Servis katmanları 
+○ IActivityLogService, ActivityLogService 
+○ ICommentService, CommentService 
+Örnek Kullanım: 
+public class RegisterRequest 
+{ 
+} 
+public string Email { get; set; } 
+public string Password { get; set; } 
+public string FirstName { get; set; } 
+public string LastName { get; set; } 
+12 
+Bu sınıf sadece AuthController tarafından kullanıcı kayıt işlemi sırasında kullanılır. 
+Domain nesnesi (User) ile karıştırılmamalıdır. 
+Neden DTO kullanılır? 
+● Veritabanı şemasıyla doğrudan frontend’in haberleşmesini önler. 
+● Sadece ihtiyaç duyulan alanlar ile çalışmayı sağlar. 
+● Güvenlik sağlar (şifre hash'lenmeden dışarı çıkmaz vs.). 
+2.3 Core Katmanı (Domain Layer) 
+TaskManagement.Core isimli proje klasörüdür. Uygulamanın kalbidir. Veritabanı 
+modeli, Enum'lar ve Interface’ler bu katmanda tanımlanır. 
+Alt Yapılar: 
+● Entities/: 
+○ User, Project, ProjectTask, Comment, Column, ActivityLog 
+● Interfaces/: 
+○ IUserRepository, 
+IProjectRepository, 
+ICommentRepository, IRepository<T>, vb. 
+Örnek Entity: 
+public class Project 
+ITaskRepository, 
+13 
+{ 
+[BsonId] 
+[BsonRepresentation(BsonType.ObjectId)] 
+public string Id { get; set; } 
+[BsonElement("name")] 
+public string Name { get; set; } 
+[BsonElement("status")] 
+public ProjectStatus Status { get; set; } 
+} 
+Bu entity MongoDB’de bir “Project” dökümanı olarak saklanır. 
+Neden Interface kullanılır? 
+● SOLID prensiplerinden Dependency Inversion ilkesine uyulur. 
+● Repository pattern sayesinde veri erişim detayı soyutlanır. 
+● Mock veritabanı kullanımı kolaylaşır (örnek: Unit test). 
+14 
+2.4 Infrastructure Katmanı (Data Access Layer) 
+TaskManagement.Infrastructure isimli klasördür. Core katmanında tanımlanan 
+IRepository ve diğer interface’lerin MongoDB implementasyonlarını içerir. 
+Ana Sınıflar: 
+● MongoDbContext.cs: Mongo veritabanı bağlantısını ve koleksiyonları tanımlar. 
+● UserRepository.cs: IUserRepository implementasyonu 
+● ProjectRepository.cs, 
+TaskRepository.cs, 
+ActivityLogRepository.cs, CommentRepository.cs 
+Örnek Fonksiyon: 
+public async Task<User> CreateAsync(User entity) 
+{ 
+} 
+await _users.InsertOneAsync(entity); 
+return entity; 
+ColumnRepository.cs, 
+Bu fonksiyon MongoDB Users koleksiyonuna yeni bir kullanıcı ekler. 
+Index Oluşturma: 
+await Users.Indexes.CreateOneAsync( 
+new CreateIndexModel<User>( 
+15 
+        Builders<User>.IndexKeys.Ascending(x => x.Email), 
+        new CreateIndexOptions { Unique = true } 
+    )); 
+ 
+Bu satır kullanıcıların e-posta adresinin benzersiz (unique) olmasını sağlar. 
+ 
+2.5 Katmanlar Arası Bağımlılık İlişkisi 
+text 
+  
+[Frontend (React)] 
+        │ 
+        ▼ 
+[TaskManagement.API] ←→ [TaskManagement.Application] 
+        │                                                                 │ 
+        ▼                                                               ▼ 
+[TaskManagement.Infrastructure] ←→ [TaskManagement.Core] 
+ 
+● API, sadece Application ve Core'a referans verir. 
+ 
+16 
+● Application, Core'a bağlıdır ama Infrastructure’a değil. 
+● Infrastructure, hem Core’u hem Application’ı kullanabilir. 
+● Bu yapı, test edilebilirlik ve modülerlik açısından en sağlam mimari 
+yaklaşımlardan biridir. 
+17 
+3. CONTROLLER’LARIN AŞIRI DETAYLI 
+ANALİZİ 
+Bu bölümde tüm API uç noktaları (endpoint) işlevlerine göre sınıflandırılmış ve satır satır ne 
+yaptıkları açıklanmıştır. Her controller için: 
+● Genel tanımı 
+● Her endpoint’in açıklaması 
+● Hangi HTTP metodu (GET, POST, PUT, DELETE) 
+● Hangi parametreleri aldığı 
+● Yetkilendirme gerektirip gerektirmediği 
+● Geriye dönen sonuçlar 
+● Kullanılan yardımcı metodlar ve tasarım desenleri 
+● Hata yönetimi ve loglama stratejileri 
+aktarılacaktır. 
+3.1 AuthController.cs 
+Amaç: Kullanıcının sisteme kayıt olması (register) ve giriş yapması (login) işlemlerini yürütür. JWT 
+üretimini yapar. 
+POST /api/v1/auth/register 
+Amaç: 
+18 
+Yeni bir kullanıcıyı sisteme kayıt etmek. 
+Kod: 
+[HttpPost("register")] 
+public async Task<IActionResult> Register([FromBody] RegisterRequest request) 
+Açıklama: 
+● RegisterRequest sınıfı kullanıcıdan gelen verileri içerir: email, password, firstName, lastName 
+● Önce, EmailExistsAsync çağrılır. Eğer e-posta zaten kayıtlıysa BadRequest döner. 
+● Parola SHA256 algoritması ile HashPassword() metodunda şifrelenir. 
+● Kullanıcı MongoDB Users koleksiyonuna eklenir. 
+● ActivityLogService.LogUserActivityAsync() çağrılarak kayıt olma işlemi loglanır. 
+● Geriye 200 OK ve "Registration successful" mesajı döner. 
+Öne Çıkanlar: 
+● Parola asla düz metin olarak kaydedilmez. 
+● Hash işlemi projeye özel değilse SHA256 gibi temel hash algoritmalarıyla yapılabilir. 
+● Activity loglama ile güvenli bir denetim izi bırakılır. 
+POST /api/v1/auth/login 
+Amaç: 
+Kullanıcı giriş yapar ve kimliğini doğrular. Giriş başarılıysa JWT döner. 
+19 
+Kod: 
+[HttpPost("login")] 
+public async Task<IActionResult> Login([FromBody] LoginRequest request) 
+Açıklama: 
+● LoginRequest: email ve password içeren DTO. 
+● GetByEmailAsync() ile kullanıcı MongoDB’den getirilir. 
+● Şifre doğrulaması VerifyPassword() ile yapılır (SHA256 hash karşılaştırması). 
+● JWT token GenerateJwtToken(user) metodu ile oluşturulur. 
+● Geriye AuthResponse modelinde: token, user bilgileri, token süresi vs. döner. 
+Detay: 
+● Kullanıcı bilgileri token içine şu claim'ler ile yazılır: 
+○ sub: Kullanıcı Id 
+○ email 
+○ role 
+○ fullName 
+Loglama: 
+Giriş işlemi sonrası: 
+await _activityLogService.LogUserActivityAsync( 
+user.Id, "LOGIN", $"User logged in: {user.Email}", ...) 
+20 
+Bu sayede sistem üzerinde kullanıcıların oturum aktiviteleri loglanmış olur. 
+JWT Üretim Metodu 
+private string GenerateJwtToken(User user) 
+Açıklama: 
+● SymmetricSecurityKey üzerinden bir SigningCredentials oluşturulur. 
+● Token bilgileri JwtSecurityToken sınıfı ile hazırlanır. 
+● Token geçerlilik süresi: 2 saat 
+● Token string olarak frontend’e gönderilir. 
+Neden Önemli? 
+● Stateless authentication modelini destekler. 
+● Performanslıdır, oturum bilgisi server'da saklanmaz. 
+● Claim'ler sayesinde rol kontrolü yapılabilir. 
+Parola Şifreleme ve Doğrulama 
+private string HashPassword(string password) 
+private bool VerifyPassword(string password, string hash) 
+21 
+● HashPassword: SHA256 ile tek yönlü hash işlemi yapar. 
+● VerifyPassword: Kullanıcıdan gelen şifre tekrar hashlenir, veri tabanındaki hash ile 
+karşılaştırılır. 
+3.2 UserController.cs 
+Amaç: Giriş yapmış kullanıcının bilgilerini görüntülemesi, profilini güncellemesi ve şifresini 
+değiştirmesi. 
+GET /api/v1/users/profile 
+Açıklama: 
+● HttpContext.User.Claims üzerinden kullanıcı id alınır. 
+● MongoDB’den kullanıcı verisi çekilir. 
+● Geriye UserDto döner: email, firstName, lastName, role, profilePhoto 
+PUT /api/v1/users/profile 
+Açıklama: 
+● FormData ile gelen bilgiler alınır (email, firstName, lastName, profilePhoto) 
+● Kullanıcının e-postası değişmişse başka biriyle çakışıp çakışmadığı kontrol edilir. 
+● Fotoğraf yüklenirse wwwroot/uploads/ klasörüne kaydedilir. 
+22 
+● Güncellenen bilgiler MongoDB’ye kaydedilir. 
+● Activity log: PROFILE_UPDATE 
+PUT /api/v1/users/change-password 
+● Yeni şifre hash'lenerek veri tabanına kaydedilir. 
+● Güncelleme işlemi UpdatedAt alanına da yansıtılır. 
+● Activity log: PASSWORD_CHANGE 
+3.3 ProjectController.cs – Proje Yönetim 
+API’si 
+Bu controller, bir kullanıcının proje oluşturma, listeleme, güncelleme ve silme gibi işlemlerini 
+gerçekleştirmesini sağlar. Aynı zamanda bir projeye ait görevlerin sayısını, tamamlanan görevleri ve 
+güncel durumu getirerek kullanıcıya dashboard istatistikleri sağlar. 
+�
+�
+ Genel Özellikler: 
+● [Authorize] ile yalnızca kimliği doğrulanmış kullanıcılar erişebilir. 
+● Her endpoint’te kullanıcının proje üzerinde sahibi mi yoksa üye mi olduğu kontrol edilir. 
+● ActivityLogService kullanılarak her işlem detaylı şekilde loglanır. 
+● Proje detayları ProjectDto üzerinden taşınır. 
+23 
+### GET /api/v1/projects 
+Amaç: 
+Giriş yapan kullanıcıya ait olan (sahibi olduğu ya da üye olduğu) tüm projeleri getirir. 
+Açıklama Adımları: 
+1. userId değeri JWT token'dan alınır. 
+2. GetByOwnerAsync(userId) → Kullanıcının sahibi olduğu projeleri getirir. 
+3. GetByMemberAsync(userId) → Kullanıcının üyesi olduğu projeleri getirir. 
+4. Concat(...) ve GroupBy(p => p.Id) → Aynı projeyi iki kez döndürmemek için birleştirilir. 
+5. Her proje için: 
+○ projectTasks = await _taskRepository.GetByProjectAsync(project.Id) 
+○ taskCount = total 
+○ completedTaskCount = status == Done olanlar 
+Geri Dönen Veri: 
+Her proje için şu bilgiler JSON olarak döner: 
+json 
+{ 
+"id": "abc123", 
+24 
+"name": "Blog App", 
+"status": "Active", 
+"createdAt": "2024-05-12T12:00", 
+"taskCount": 12, 
+"completedTaskCount": 7 
+} 
+### GET /api/v1/projects/{id} 
+Açıklama: 
+● URL parametresinden gelen id ile proje veri tabanından alınır. 
+● Eğer proje bulunamazsa → 404 NotFound 
+● Kullanıcı, proje sahibi mi ya da proje üyeleri arasında mı kontrol edilir. 
+● Aksi halde → 403 Forbidden 
+### POST /api/v1/projects 
+Amaç: 
+Yeni bir proje oluşturur. 
+Giriş Parametreleri: 
+25 
+● CreateProjectRequest → name, description, startDate, endDate, memberIds 
+Adımlar: 
+1. userId token'dan alınır. 
+2. Yeni bir Project nesnesi oluşturulur. 
+3. OwnerId = userId, Status = ProjectStatus.Active 
+4. MongoDB’ye kayıt yapılır. 
+5. Aktivite loglanır: "Created project: {project.Name}" 
+Geriye Döner: 
+Yeni oluşturulan proje bilgileri 
+### PUT /api/v1/projects/{id} 
+Amaç: 
+Bir projeyi günceller (sadece sahibi güncelleyebilir). 
+Adımlar: 
+1. Proje id ile bulunur. 
+2. project.OwnerId != userId → Forbid() 
+3. UpdateProjectRequest üzerinden alınan bilgilerle alanlar güncellenir: 
+○ name, description, memberIds, status, startDate, endDate 
+26 
+4. UpdatedAt = DateTime.UtcNow 
+5. MongoDB’ye kayıt yapılır. 
+6. ActivityLogService.LogProjectActivityAsync(...) çağrılır. 
+### DELETE /api/v1/projects/{id} 
+Açıklama: 
+● Sahibi olmayan kullanıcı silme işlemi yapamaz. 
+● DeleteAsync(id) çağrılır. 
+● Başarısız olursa 404 
+● Başarılıysa 204 NoContent 
+Log mesajı: "Deleted project: {project.Name}" 
+### GET /api/v1/projects/recent-tasks 
+Amaç: 
+Kullanıcının erişimi olan tüm projelerden son oluşturulan görevleri getirir. 
+Açıklama: 
+1. GetAllAsync() ile tüm projeler alınır. 
+2. Kullanıcının sahibi olduğu veya dahil olduğu projeler filtrelenir. 
+27 
+3. Her proje için: 
+○ GetByProjectAsync(project.Id) 
+○ Görevler sıralanır: OrderByDescending(t => t.CreatedAt) 
+4. En yeni 10 görev seçilir. 
+Dönen Veri: 
+Görev adı, durumu, önceliği, hangi projeye ait olduğu ve oluşturulma zamanı gibi alanları içerir. 
+Değerlendirme: 
+● Tüm işlemlerde güvenlik (kimlik ve sahiplik kontrolü) en başta sağlanır. 
+● ActivityLogService kullanılarak her işlem detaylı şekilde loglanır. 
+● Dashboard gibi frontend arayüzü için optimize veri sağlanır (statistiksel alanlar dahil). 
+● Modüler yapı sayesinde başka servislerin (örneğin notification) bu controller'a kolay entegre 
+edilmesi mümkündür. 
+3.4 TaskController.cs – Görev Yönetimi 
+TaskController sınıfı, sistemdeki görevlerle ilgili tüm işlemleri yöneten ana kontrol katmanıdır. Bir 
+görev; başlığı, açıklaması, bulunduğu sütun (column), ait olduğu proje, durumu (status), önceliği 
+(priority), atanan kullanıcıları, etiketleri (labels), alt görevleri (subtasks) ve hatırlatma zamanını 
+(reminderTime) içerebilir. 
+Görevlerle ilgili yapılabilecek işlemler şunlardır: 
+28 
+● Tüm görevleri listeleme 
+● Projeye ait görevleri alma 
+● Görev oluşturma 
+● Güncelleme 
+● Durum değiştirme 
+● Kullanıcı atama 
+● Silme 
+● Alt görev ve etiket yönetimi 
+[GET] /api/v1/tasks 
+Amaç: Kullanıcının erişimi olan tüm projelere ait görevleri listeler. 
+1. Token'dan kullanıcı kimliği alınır. 
+2. Kullanıcının sahibi ve üyesi olduğu projeler GetByOwnerAsync ve GetByMemberAsync ile 
+çekilir. 
+3. Bu projelerin Id değerlerine göre görevler getirilir. 
+4. Görevler MapToTaskDto fonksiyonu aracılığıyla DTO formatına dönüştürülerek döner. 
+Bu endpoint, kullanıcıya ait tüm görevleri merkezi bir liste halinde verir. Örneğin yönetici panelinde 
+görev istatistikleri için kullanılabilir. 
+29 
+[GET] /api/v1/tasks/{id} 
+Amaç: Belirli bir görevi ID’sine göre getirir. 
+1. GetByIdAsync(id) ile görev getirilir. 
+2. Görevin ait olduğu proje bulunur. 
+3. Kullanıcının proje sahibi ya da üyesi olup olmadığı kontrol edilir. 
+4. DTO olarak görev bilgisi döner. 
+[GET] /api/v1/tasks/project/{projectId} 
+Amaç: Belirli bir projeye ait görevleri listeler. 
+1. Proje doğrulanır. 
+2. Kullanıcı proje üzerinde yetkili mi kontrol edilir. 
+3. GetByProjectAsync(projectId) çağrılır. 
+4. Her görev TaskDto olarak dönüştürülür. 
+Bu endpoint, frontend tarafındaki proje panosunda görevlerin listelenmesi için kullanılır. 
+[POST] /api/v1/tasks 
+Amaç: Yeni bir görev oluşturur. 
+Giriş modeli: CreateTaskRequest 
+30 
+● title 
+● description 
+● projectId 
+● columnId 
+● assignedToIds (birden fazla kullanıcıya atanabilir) 
+● priority (Low, Medium, High, Critical) 
+● labels (renkli etiketler) 
+● dueDate (teslim tarihi) 
+● estimatedHours 
+● subtasks (isteğe bağlı küçük görevler) 
+İşlem adımları: 
+1. Kullanıcı kimliği doğrulanır. 
+2. Proje ID’si doğrulanır ve kullanıcı proje üzerinde yetkili mi kontrol edilir. 
+3. ProjectTask nesnesi oluşturulur. 
+4. Varsayılan değerler atanır: Status = Todo, Order = 0 
+5. MongoDB’ye kaydedilir. 
+6. LogTaskActivityAsync çağrılarak işlem loglanır. 
+7. Dönüş: TaskDto nesnesi. 
+31 
+Bu endpoint görev oluşturma formunun çalışmasını sağlar. Her görev bir projeye ve sütuna ait olmak 
+zorundadır. 
+[PUT] /api/v1/tasks/{id} 
+Amaç: Mevcut bir görevi günceller. 
+Giriş modeli: UpdateTaskRequest 
+İşlem adımları: 
+1. Görev ID’siyle görev getirilir. 
+2. Görevin ait olduğu proje doğrulanır. 
+3. Kullanıcı yetkili değilse 403 Forbidden. 
+4. Görev alanları güncellenir: 
+○ title, description, columnId 
+○ assignedToIds 
+○ status, priority 
+○ labels, dueDate 
+○ estimatedHours, actualHours 
+○ subtasks 
+5. Güncelleme saati: UpdatedAt = DateTime.UtcNow 
+6. MongoDB’ye güncel kayıt yazılır. 
+32 
+7. Log: Updated task: {task.Title} 
+Her alt görev Subtask nesnesi olarak saklanır. Etiketler ayrı ayrı oluşturulmuşsa LabelDto listesine 
+dönüştürülür. 
+[PATCH] /api/v1/tasks/{id}/status 
+Amaç: Görevin durumunu (Todo, InProgress, Review, Done) günceller. 
+Giriş modeli: Sadece string status 
+İşlem: 
+1. Görev getirilir ve yetki kontrolü yapılır. 
+2. Enum.TryParse ile string durum enum’a çevrilir. 
+3. Status güncellenir, tarih güncellenir. 
+4. Güncellenmiş görev MongoDB’ye yazılır. 
+5. Log kaydı: STATUS_CHANGE olarak tutulur. 
+Bu metod yalnızca görev taşıma gibi durumlar için kullanılır (örneğin: sürükle bırak işlemi). 
+[PATCH] /api/v1/tasks/{id}/assign 
+Amaç: Görevi belirli bir kullanıcıya atar. 
+1. Görev bulunur, kullanıcı yetkili mi kontrol edilir. 
+2. assigneeId ile atanacak kullanıcı getirilir. 
+33 
+3. Görev AssignedToIds listesine atanır. 
+4. Log kaydı tutulur: ASSIGN, assigneeFullName bilgisi dahil. 
+Not: İleride çoklu atama desteklenebilir; ancak mevcut haliyle sadece tek kullanıcı atanır. 
+[DELETE] /api/v1/tasks/{id} 
+Amaç: Görevi siler. 
+İşlem: 
+1. Görev ve proje doğrulanır. 
+2. Kullanıcı sahibi ya da üyesi değilse silme işlemi engellenir. 
+3. MongoDB’de görev silinir. 
+4. Log: Deleted task: {task.Title} 
+Silme işleminde görevle birlikte alt görev, etiket gibi gömülü alanlar da silinir. 
+Yardımcı Metot: MapToTaskDto 
+Bu metot, ProjectTask nesnesini TaskDto nesnesine dönüştürür. 
+● Kullanıcı ID’leri ile AssignedTo listesi oluşturulur. 
+● Label ve Subtask nesneleri dönüştürülür. 
+● Görevin gecikmiş (overdue) olup olmadığı hesaplanır. 
+34 
+● Görev 24 saat içinde teslim edilmek üzereyse IsDueSoon = true 
+Bu controller; uygulamanın görev yönetimi, durum takibi, zamanlama ve kullanıcı sorumluluğu 
+açısından bel kemiğidir. Kod yapısı net, modüler ve extensible (genişletilebilir) şekilde tasarlanmıştır. 
+3.5 ActivityLogController.cs – Kullanıcı 
+Eylemlerinin Kaydı 
+Bu controller, kullanıcıların sistemde gerçekleştirdiği her önemli eylemi (giriş yapma, proje 
+oluşturma, görev güncelleme gibi) kayıt altına alır ve kullanıcıya ait logları sorgulamasına imkân 
+tanır. 
+Genel Özellikler 
+● [Authorize] → Tüm işlemler oturum açmış kullanıcılar içindir. 
+● Gelişmiş filtreleme destekler: kullanıcıya göre, varlık türüne göre (Project, Task vs.), tarih 
+aralığına göre. 
+● Her log, ActivityLog entity'si üzerinden tutulur. 
+● Her kayıt, kullanıcıya ait bilgilerle zenginleştirilerek dönülür (user name, email). 
+[GET] /api/v1/activity-logs 
+Amaç: Kullanıcının geçmişte yaptığı işlemleri filtrelerle birlikte listelemek. 
+Giriş Parametreleri (Query string): 
+35 
+● userId → Belirli bir kullanıcıya ait logları getir. 
+● entityType ve entityId → Belirli bir varlığa ait (proje, görev vs.) logları getir. 
+● startDate ve endDate → Tarih aralığına göre logları getir. 
+● page, pageSize → Sayfalama parametreleri 
+İşlem Adımları: 
+1. Token'dan kullanıcı kimliği alınır. 
+2. Eğer userId varsa: 
+○ Kullanıcı sadece kendi loglarını görebilir. 
+○ Aksi durumda 403 Forbidden 
+3. Eğer entityType + entityId varsa: 
+○ Varlık türü Project ise proje erişimi kontrol edilebilir. 
+○ Şimdilik yalnızca kullanıcının kendi logları gösterilir. 
+4. Eğer tarih aralığı varsa: 
+○ GetByDateRangeAsync(startDate, endDate) 
+5. Aksi takdirde: 
+○ En güncel loglar GetRecentAsync ile getirilir. 
+Log Zenginleştirme: 
+36 
+● UserId listesi çıkarılır. 
+● Her kullanıcı için GetByIdAsync çağrılarak adı, soyadı ve e-posta bilgileri alınır. 
+● Log listesine user objesi eklenir. 
+Sayfalama: 
+csharp 
+.Skip((filter.Page - 1) * filter.PageSize).Take(filter.PageSize) 
+Bu yapı sayesinde sayfa sayfa gezinme yapılabilir. Geriye log listesi ve toplam sayfa sayısı döner. 
+[GET] /api/v1/activity-logs/{id} 
+● Belirli bir log kaydını ID’ye göre getirir. 
+● Eğer log bulunamazsa 404 NotFound 
+[GET] /api/v1/activity-logs/user/{userId} 
+● Sadece oturum açmış kullanıcı kendi loglarını alabilir. 
+● Sayfalama desteklenir (page, pageSize) 
+● Her log nesnesi içinde user bilgisi (ad, soyad, e-posta) mevcuttur. 
+37 
+[GET] /api/v1/activity-logs/entity/{entityType}/{entityId} 
+● Belirli bir proje ya da göreve ait tüm logları getirir. 
+● Kullanıcının sadece kendi logları filtrelenerek gösterilir. 
+[GET] /api/v1/activity-logs/recent 
+● Varsayılan olarak son 50 logu getirir. 
+● Bu endpoint genellikle dashboard’da kullanılır. 
+[GET] /api/v1/activity-logs/date-range 
+● Başlangıç ve bitiş tarihi aralığında logları getirir. 
+● Kullanıcının sadece kendi logları filtrelenir. 
+● Sayfalama desteklenir. 
+Değerlendirme 
+● Tüm endpoint’ler güçlü filtreleme ve sayfalama mekanizmalarıyla desteklenmiştir. 
+● Kullanıcılar yalnızca kendi loglarını görebilir, böylece gizlilik korunur. 
+38 
+● ActivityLog nesnesi sayesinde sistemde kim ne zaman ne yaptı izlenebilir hale gelir. 
+● Bu yapı kurumsal uygulamalarda denetim (audit trail) ve güvenlik açısından vazgeçilmezdir. 
+3.6 ColumnController.cs – Sütun (Column) 
+Yönetimi 
+Her proje, Trello benzeri bir pano yapısına sahiptir. Görevler bu panoda yer alan sütunlara (To Do, In 
+Progress, Done vb.) yerleştirilir. ColumnController, bu sütunları yönetmekten sorumludur. 
+[GET] /api/v1/columns 
+● Giriş yapan kullanıcıya ait tüm projelerin sütunlarını getirir. 
+● Önce kullanıcıya ait projeler getirilir. 
+● Bu projeler için sütunlar toplanır. 
+[GET] /api/v1/columns/{id} 
+● Belirli bir sütun ID’ye göre getirilir. 
+● Kullanıcı proje sahibi mi ya da üyesi mi kontrol edilir. 
+39 
+[GET] /api/v1/columns/project/{projectId} 
+● Belirli bir projeye ait sütunları getirir. 
+● Sıralama: Order alanına göre yapılır. 
+[POST] /api/v1/columns 
+Giriş modeli: CreateColumnRequest 
+● Alanlar: name, projectId, order, color 
+● Kullanıcı proje üzerinde yetkili mi kontrol edilir. 
+● Yeni sütun oluşturulur ve veritabanına kaydedilir. 
+[PUT] /api/v1/columns/{id} 
+Güncelleme işlemi yapar: 
+● İsim, renk ve sıra alanları güncellenebilir. 
+● UpdatedAt = DateTime.UtcNow 
+● Kullanıcının erişimi kontrol edilir. 
+[PATCH] /api/v1/columns/{id}/order` 
+40 
+● Sadece Order alanını günceller. 
+● Sürükle bırak işlemlerinde kullanılır. 
+[PATCH] /api/v1/columns/{id}/color` 
+● Sadece Color alanını günceller. 
+● Arayüzde görsel farklılık sağlamak için kullanılır. 
+[DELETE] /api/v1/columns/{id} 
+● Sütunu siler. 
+● Erişim kontrolü yapılır. 
+● Eğer sütunda görevler varsa öncesinde kontrol eklenebilir. 
+[POST] /api/v1/columns/project/{projectId}/default 
+Amaç: Projeye varsayılan sütunlar oluşturmak. 
+● To Do → Gri (#6B7280) 
+● In Progress → Mavi (#3B82F6) 
+● Review → Turuncu (#F59E0B) 
+● Done → Yeşil (#10B981) 
+41 
+Bu işlem yeni oluşturulan her proje için otomatik olarak yapılabilir. 
+Değerlendirme: 
+● Kolay kullanılabilir, esnek ve önceden tanımlı sütun yapısı ile kullanıcı dostu bir deneyim 
+sunar. 
+● Renkli yapı, görsel olarak farklı görev aşamalarının algılanmasını kolaylaştırır. 
+● Projeye özel sütun yapısı sayesinde her ekip kendine özel süreç tanımlayabilir. 
+3.7 
+CommentController.cs 
+Yönetimi – Yorum 
+Bu controller, görevler (tasks) üzerinde kullanıcıların yorum yapmasını ve bu yorumları düzenleyip 
+silmesini sağlar. Her yorum belirli bir görevle ilişkilidir ve yalnızca yorumu yapan kullanıcı tarafından 
+düzenlenip silinebilir. 
+Genel Özellikler 
+● [Authorize] → Sadece giriş yapmış kullanıcılar erişebilir. 
+● CRUD operasyonları desteklenir: Get, Post, Put, Delete 
+● Her işlemde kullanıcı yetkisi doğrulanır. 
+[GET] /api/v1/comments/task/{taskId} 
+Amaç: Belirli bir göreve ait tüm yorumları getirir. 
+42 
+İşlem adımları: 
+1. taskId URL parametresi olarak alınır. 
+2. GetCommentsByTaskIdAsync(taskId) çağrılır. 
+3. Veritabanından ilgili yorumlar getirilir. 
+4. Yorumlar sıralanarak (createdAt) JSON listesi olarak frontend’e gönderilir. 
+[POST] /api/v1/comments 
+Amaç: Yeni yorum ekler. 
+1. JWT token’dan userId alınır. 
+2. CreateCommentDto ile gelen içerik alınır. 
+3. AddAsync(userId, dto) çağrılarak yorum oluşturulur: 
+○ TaskId, UserId, Content, CreatedAt alanları set edilir. 
+4. Yorum oluşturulursa 201 Created döner. 
+Bu endpoint, görev detay ekranında yorum kutusuna yazılan metni sunucuya göndermek için 
+kullanılır. 
+[PUT] /api/v1/comments/{id} 
+Amaç: Mevcut bir yorumu günceller. 
+Kurallar: 
+43 
+● Yalnızca yorumu yapan kullanıcı düzenleyebilir. 
+● Diğer kullanıcılar 403 Forbidden yanıtı alır. 
+İşlem adımları: 
+1. JWT'den userId alınır. 
+2. Yorum veritabanından id ile getirilir. 
+3. comment.UserId != userId ise işlem reddedilir. 
+4. İçerik (Content) güncellenir. 
+5. UpdatedAt alanı set edilir. 
+6. Başarılıysa 204 NoContent döner. 
+[DELETE] /api/v1/comments/{id} 
+Amaç: Yorumu siler. 
+Kurallar: 
+● Yalnızca yorumu yazan kullanıcı silebilir. 
+● Diğer kullanıcılar 403 Forbidden. 
+Silme işlemi: 
+1. Yorum bulunur. 
+2. Kullanıcının yetkisi kontrol edilir. 
+44 
+3. Silme işlemi yapılır. 
+4. 204 NoContent döner. 
+Değerlendirme 
+● Yorumlar, görev iş birliğini artırır. 
+● Kullanıcıya özel yetkilendirme mantığı doğrudan veri güvenliğini sağlar. 
+● Tüm işlemler CommentService aracılığıyla servis katmanında yönetilir, controller sade kalır. 
+3.8 Program.cs – Uygulama Başlatma ve 
+Yapılandırma Dosyası 
+Bu dosya, ASP.NET Core Web API projesinin başlangıç noktasıdır. İçerisinde uygulama servisleri 
+tanımlanır, middleware’ler eklenir ve uygulama ayağa kaldırılır. 
+Yapılandırılan Başlıca Konular: 
+● MongoDB enum serializer’ları 
+● Serilog loglama altyapısı 
+● Swagger dokümantasyonu 
+● API versioning 
+● CORS politikası 
+45 
+● JWT doğrulama 
+● Rate limiting (IP bazlı) 
+● Static file servisi (profil fotoğrafları) 
+● Global hata yakalama middleware’i 
+MongoDB Enum Serializer 
+csharp 
+● BsonSerializer.RegisterSerializer(typeof(ProjectTaskStatus), 
+EnumSerializer<ProjectTaskStatus>(BsonType.String)); 
+new 
+Amaç: Enum değerlerinin MongoDB'de string olarak saklanması (örnek: "InProgress"), böylece 
+okunabilirlik artar. 
+Serilog Yapılandırması 
+csharp 
+● Log.Logger = new LoggerConfiguration() 
+●     .WriteTo.Console() 
+●     .WriteTo.File("logs/api-.log", rollingInterval: RollingInterval.Day) 
+46 
+● Hem terminal hem de dosyaya log yazılır. 
+● rollingInterval ile günlük dosyalar oluşturulur. 
+● UseSerilog() ile framework’e entegre edilir. 
+Swagger 
+csharp 
+● options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme { ... }); 
+● Swagger UI üzerinde JWT token girişi sağlanır. 
+● Sadece development ortamında aktif edilir. 
+API Versioning 
+csharp 
+● options.DefaultApiVersion = new ApiVersion(1, 0); 
+● options.AssumeDefaultVersionWhenUnspecified = true; 
+Amaç: Gelecekte v2, v3 gibi yeni versiyonlar eklendiğinde eski versiyonların bozulmamasını 
+sağlamak. 
+47 
+CORS Politikası 
+csharp 
+● options.AddPolicy("AllowAll", 
+policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod()); 
+policy 
+=> 
+Geliştirme sırasında tüm kaynaklara açık CORS politikası tanımlanmıştır. Canlı ortamda 
+sınırlandırılabilir. 
+JWT Doğrulama 
+csharp 
+● options.TokenValidationParameters = new TokenValidationParameters 
+● { 
+●     ValidateIssuer = true, 
+●     ValidateAudience = true, 
+●     ... 
+● } 
+● JWT token’ın doğruluğu, imzası ve süresi kontrol edilir. 
+● Issuer, Audience ve Secret değerleri appsettings.json içinden alınır. 
+48 
+Rate Limiting 
+json 
+● "IpRateLimiting": { 
+●   "GeneralRules": [ 
+●     { "Endpoint": "*", "Period": "1s", "Limit": 10 }, 
+●     { "Endpoint": "*", "Period": "1m", "Limit": 100 } 
+●   ] 
+● } 
+Her IP adresi saniyede 10 istek, dakikada 100 istekle sınırlanmıştır. 
+Static File Middleware 
+csharp 
+● app.UseStaticFiles(new StaticFileOptions { 
+●     FileProvider = new PhysicalFileProvider(...), 
+●     RequestPath = "/uploads" 
+● }); 
+Amaç: Kullanıcı profil fotoğraflarının /uploads dizini altından servis edilmesini sağlamak. 
+Global Hata Yönetimi 
+csharp 
+49 
+● app.Use(async (context, next) => { 
+●     try { await next(); } 
+●     catch (Exception ex) { 
+●         Log.Error(ex, "Unhandled exception"); 
+●         context.Response.StatusCode = 500; 
+●         await context.Response.WriteAsJsonAsync(new { error = "An unexpected error 
+occurred." }); 
+●     } 
+● }); 
+Uygulama genelinde oluşan hatalar tek noktadan yakalanır, loglanır ve kullanıcıya genel bir hata 
+mesajı döner. 
+Bu yapı sayesinde uygulama tüm yönleriyle modüler, ölçeklenebilir ve güvenli hale getirilmiştir. 
+Program.cs dosyası sadece uygulamayı başlatmakla kalmaz, aynı zamanda sistemin nasıl çalıştığını 
+belirleyen yapı taşlarını da yönetir. 
+50 
+4. FRONTEND MİMARİSİ VE KLASÖR 
+YAPISI 
+Projenin istemci (frontend) tarafı, modern tek sayfa uygulama (SPA – Single Page Application) 
+yaklaşımıyla React ve TypeScript kullanılarak geliştirilmiştir. Uygulama bileşen tabanlı yapıdadır ve 
+tüm kullanıcı arayüzü fonksiyonları bu bileşenlere dağıtılmıştır. 
+4.1 Proje Ana Dizini 
+pgsql 
+task-management-frontend/ 
+│ 
+├── public/ 
+│   └── index.html 
+│ 
+├── src/ 
+│   ├── components/ 
+│   ├── contexts/ 
+│   ├── App.tsx 
+│   ├── index.tsx 
+│   └── index.css 
+│ 
+├── package.json 
+51 
+├── tailwind.config.js 
+├── postcss.config.js 
+├── Dockerfile 
+└── nginx.conf 
+Bu yapı, modern React projelerinde sıklıkla kullanılan standart bir yapıdadır. React bileşenleri 
+src/components/ klasöründe gruplanmış, küresel (global) durum yönetimi src/contexts/ klasöründe 
+sağlanmıştır. Tailwind CSS, Docker ve NGINX gibi yapılandırma dosyaları proje kök dizinindedir. 
+4.2 public/index.html 
+Bu dosya, React uygulamasının bağlandığı temel HTML dosyasıdır. index.html içerisinde <div 
+id="root"></div> bulunur ve bu alan JavaScript tarafından render edilen sanal DOM’un 
+yerleştirileceği yerdir. 
+Bu yapı sayesinde uygulama tek sayfa üzerinden çalışır; sayfa yenilenmeden bileşenler dinamik 
+olarak güncellenir. 
+4.3 src/index.tsx 
+tsx 
+const root = ReactDOM.createRoot( 
+document.getElementById('root') as HTMLElement 
+); 
+root.render( 
+<React.StrictMode> 
+52 
+<App /> 
+</React.StrictMode> 
+); 
+Bu dosya uygulamanın başlangıç noktasıdır. App bileşeni burada render edilir. React.StrictMode, 
+hataları erkenden fark etmek için geliştirme aşamasında kullanılır. 
+4.4 src/index.css 
+Tailwind CSS’in çekirdek stil ayarlarını içeren dosyadır. İçeriğinde genellikle şu satırlar yer alır: 
+css 
+@tailwind base; 
+@tailwind components; 
+@tailwind utilities; 
+Bu satırlar Tailwind’in temel stil yapılarını projeye entegre eder. 
+4.5 src/App.tsx 
+tsx 
+<Router> 
+<Navbar /> 
+53 
+<Routes> 
+<Route path="/login" element={<Login />} /> 
+<Route path="/register" element={<Register />} /> 
+<Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} /> 
+... 
+</Routes> 
+</Router> 
+Uygulamanın yönlendirme (routing) yapısı burada tanımlanır. React Router kullanılarak her yol 
+(route) bir bileşene bağlanır. 
+Özel PrivateRoute bileşeni ile korumalı rotalara yalnızca oturum açmış kullanıcıların erişebilmesi 
+sağlanır. 
+4.6 src/contexts/AuthContext.tsx 
+Bu dosya global kimlik doğrulama sistemini yöneten dosyadır. 
+Fonksiyonları: 
+● login(email, password) – Axios ile giriş yapar, token'ı ve kullanıcıyı localStorage'a yazar. 
+● register(...) – Kayıt işlemi. 
+● logout() – Token ve kullanıcı bilgisini temizler. 
+● updateUser() – Profil güncelleme sonrası user state'ini yeniler. 
+Yapısı: 
+54 
+● React createContext() ve useContext() hook’ları ile global kimlik bilgisi yönetilir. 
+● Axios interceptor ile tüm isteklerin Authorization header'ı otomatik eklenir. 
+4.7 src/components/ 
+Bu klasör tüm kullanıcı arayüz bileşenlerini içerir. İçeriği aşağıdaki gibi yapılandırılmıştır: 
+css 
+components/ 
+│ 
+├── auth/          
+→ Login, Register, Profile, PrivateRoute 
+├── dashboard/     → Dashboard (proje listesi, görev sayısı) 
+├── layout/        
+├── logs/          
+└── projects/      
+→ Navbar (navigasyon) 
+→ ActivityLogs (hareket geçmişi) 
+→ ProjectBoard (Trello benzeri pano) 
+Bu alt klasörlerin her biri kendi içinde ilgili ekranın görsel ve mantıksal bileşenlerini içerir. Her dosya 
+React fonksiyonel bileşeni (functional component) biçimindedir ve TypeScript kullanır. 
+4.8 package.json 
+Proje bağımlılıklarını ve script’lerini tanımlar. 
+Ana bağımlılıklar: 
+55 
+● "react" ve "react-dom" → Temel React kütüphanesi 
+● "react-router-dom" → Yönlendirme 
+● "axios" → HTTP istemcisi 
+● "react-beautiful-dnd" → Drag & Drop özelliği 
+● "tailwindcss" → Stil yönetimi 
+● "typescript" → Tip güvenliği 
+4.9 Dockerfile 
+Docker ile frontend uygulamasını derleyip statik dosya haline getirip bir NGINX konteynerinde 
+çalıştırır. 
+● Birinci aşamada: Node.js ile npm run build komutu çalıştırılır. 
+● İkinci aşamada: /build klasörü NGINX'in public dizinine kopyalanır. 
+● nginx.conf dosyası ile API proxy ayarlanır. 
+4.10 nginx.conf 
+Frontend ile backend arasında reverse proxy görevini üstlenir. 
+nginx 
+location /api/ { 
+56 
+proxy_pass http://backend:8080; 
+} 
+Bu ayar sayesinde tarayıcıdan /api/... olarak yapılan istekler doğrudan backend konteynerine 
+yönlendirilir. 
+Bu aşamada frontend yapısının genel mimarisi, klasörleri, yönlendirme yapısı, kimlik doğrulama 
+sistemi ve Docker dağıtım mantığı detaylıca açıklanmıştır. 
+57 
+5. FRONTEND BİLEŞEN ANALİZLERİ  
+5.1 Login.tsx – Giriş (Sign In) Bileşeni 
+Yolu: src/components/auth/Login.tsx 
+Amaç: Kullanıcının e-posta ve şifresini girerek sisteme giriş yapmasını sağlar. Başarılı girişte JWT 
+token alınır ve kullanıcı yönlendirilir. 
+Kullanılan Hook'lar: 
+● useState: e-posta, şifre, hata mesajı, yüklenme durumu gibi state'leri tutar. 
+● useNavigate: React Router ile yönlendirme yapar. 
+● useAuth: AuthContext'ten login fonksiyonunu alır. 
+Bileşen Detayları: 
+tsx 
+const [email, setEmail] = useState<string>( ');   
+Kullanıcının girdiği e-posta adresini saklamak için state. 
+tsx 
+const [password, setPassword] = useState<string>(');   
+58 
+Kullanıcının şifresini saklamak için state. 
+tsx 
+const [error, setError] = useState<string>( ');   
+API’den gelen hata mesajını tutar ve kullanıcıya gösterir. 
+tsx 
+const [isLoading, setIsLoading] = useState<boolean>(false);   
+Giriş işlemi sırasında butonun disable olması ve “Signing in...” metninin görünmesi için 
+kullanılır. 
+tsx 
+const { login } = useAuth();   
+AuthContext içindeki login fonksiyonunu çağırmak için kullanılır. 
+tsx 
+const navigate = useNavigate();   
+Başarılı login sonrası dashboard sayfasına yönlendirme yapılır. 
+59 
+handleSubmit Fonksiyonu: 
+tsx 
+const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => { ... } 
+1. Form submit edildiğinde tetiklenir. 
+2. Hata mesajları temizlenir, loading true yapılır. 
+3. await login(email, password) → Axios üzerinden backend’e istek gönderilir. 
+4. Başarılıysa → navigate('/dashboard') ile yönlendirme yapılır. 
+5. Hata olursa → error.response?.data?.error | error.message alınarak ekranda gösterilir. 
+Giriş Formu: 
+tsx 
+<form className="space-y-6" onSubmit={handleSubmit}> 
+Form HTML elementidir. onSubmit event’i handleSubmit fonksiyonunu tetikler. 
+tsx 
+<input type="email" value={email} onChange={handleEmailChange} /> 
+<input type="password" value={password} onChange={handlePasswordChange} /> 
+60 
+E-posta ve şifre alanları. Kullanıcı yazdıkça state güncellenir. 
+tsx 
+<button type="submit" disabled={isLoading}> 
+Tıklanınca form submit edilir. isLoading durumunda devre dışı kalır. 
+Kullanılan Tailwind Sınıfları: 
+● bg-blue-600 hover:bg-blue-700 → Mavi buton arka planı 
+● rounded-lg shadow → Düğmeler ve kartlar için köşe yuvarlatma ve gölge 
+● focus:ring → Erişilebilirlik için mavi çerçeve efekti 
+Sonuç: 
+● Giriş ekranı kullanıcı dostudur. 
+● Hatalar kullanıcıya açık şekilde gösterilir. 
+● Yönlendirme ve kimlik doğrulama işlemi güvenli şekilde yapılır. 
+5.2 Register.tsx – Kayıt (Sign Up) Bileşeni 
+Yolu: src/components/auth/Register.tsx 
+61 
+Amaç: Kullanıcının ad, soyad, e-posta ve şifre bilgilerini girerek yeni bir hesap oluşturmasını sağlar. 
+Öne Çıkan Noktalar: 
+● formData nesnesi: Tüm giriş alanlarını tek state altında tutar. 
+● if (password !== confirmPassword) → Uyuşmayan şifreler kontrol edilir. 
+● await register(...) → Backend’e istek gönderilir. 
+● Başarılıysa → Login sayfasına yönlendirilir. 
+● Hata olursa → error.response?.data?.error gösterilir. 
+React Kod Özeti: 
+tsx 
+const [formData, setFormData] = useState({ ... }); 
+Form alanlarının tümünü tek bir nesnede tutmak veri bütünlüğü sağlar. 
+tsx 
+const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => { ... } 
+Kullanıcının girdiği değerleri formData içerisine yazmak için kullanılır. 
+tsx 
+62 
+const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => { ... } 
+Form gönderilince: 
+● Parolalar eşleşiyor mu kontrol edilir. 
+● Backend’e kayıt isteği gönderilir. 
+● Hata varsa gösterilir, başarı varsa login sayfasına yönlendirme yapılır. 
+Tailwind CSS Kullanımı: 
+● text-sm font-medium text-gray-700 → Etiketler için okunabilirlik 
+● rounded-lg shadow-sm → Giriş alanları için görsel iyileştirme 
+● hover:bg-blue-700 → Etkileşimli kullanıcı deneyimi 
+5.3 PrivateRoute.tsx 
+Amaç: Sadece oturum açmış kullanıcıların belirli sayfalara erişmesini sağlar. 
+tsx 
+const { user, isLoading } = useAuth(); 
+AuthContext’ten kullanıcı ve loading bilgisi alınır. 
+tsx 
+63 
+if (isLoading) return <div>Loading...</div>; 
+if (!user) return <Navigate to="/login" />; 
+return <>{children}</>; 
+Eğer kullanıcı tanımsızsa login sayfasına yönlendirme yapılır. Aksi halde içeriği render 
+eder. 
+Bu yapı, frontend güvenliği için kritik öneme sahiptir. Sadece token saklamak değil, korunan 
+sayfaların erişimini kontrol etmek de gereklidir. 
+Bu bölümde kimlik doğrulama süreciyle ilgili 3 ana bileşen (Login, Register, PrivateRoute) detaylıca 
+açıklanmıştır. 
+64 
+5.4 Profile.tsx – Kullanıcı Profili 
+Yolu: src/components/auth/Profile.tsx 
+Amaç: Kullanıcının ad, soyad, e-posta ve profil fotoğrafı gibi bilgilerini görüntülemesini ve 
+güncellemesini sağlar. 
+Kullanılan State'ler 
+tsx 
+const [profileData, setProfileData] = useState<ProfileData>({ ... }); 
+const [isEditing, setIsEditing] = useState(false); 
+const [isLoading, setIsLoading] = useState(false); 
+const [message, setMessage] = useState('); 
+const [selectedFile, setSelectedFile] = useState<File | null>(null); 
+const [previewUrl, setPreviewUrl] = useState<string>( '); 
+● profileData: Kullanıcının ad, soyad, e-posta ve profil fotoğrafını saklar. 
+● isEditing: Formun düzenlenebilir olup olmadığını kontrol eder. 
+● selectedFile: Seçilen yeni profil fotoğrafı 
+● previewUrl: Yeni fotoğrafın ön izlemesini göstermek için kullanılır. 
+65 
+useEffect 
+tsx 
+useEffect(() => { 
+const fetchProfile = async () => { 
+... 
+}; 
+fetchProfile(); 
+}, []); 
+● Sayfa yüklendiğinde otomatik olarak /api/v1/users/profile endpoint’ine GET isteği gönderilir. 
+● Kullanıcının bilgileri çekilir, state’e atanır. 
+● Bu bilgi hem AuthContext.updateUser() ile global olarak güncellenir hem de localStorage’a 
+yazılır. 
+handleSubmit – Profili Güncelleme 
+tsx 
+const handleSubmit = async (e: React.FormEvent) => { ... } 
+66 
+● Güncelleme işlemi başlatıldığında FormData oluşturulur. 
+● formData.append(...) ile ad, soyad, e-posta ve seçilen resim eklenir. 
+● PUT isteği yapılır. 
+● Güncelleme başarılı olursa mesaj gösterilir, previewUrl sıfırlanır. 
+handleChangePassword 
+● Kullanıcıdan yeni şifre iki defa istenir. 
+● Eşleşirse: /api/v1/users/change-password endpoint’ine PUT isteği yapılır. 
+● Şifre değiştirme başarılı olursa mesaj gösterilir. 
+Erişim Denetimi 
+● Sadece oturum açmış kullanıcılar erişebilir (useAuth().user) 
+● Giriş yapılmamışsa otomatik olarak giriş ekranına yönlendirilir (Parent route tarafından) 
+Görsel Arayüz 
+● Tailwind CSS ile responsive bir kullanıcı arayüzü sunulmuştur. 
+● Profil resmi img etiketi ile gösterilir, üzerine tıklanarak yeni resim seçilebilir. 
+67 
+● Mesajlar: Başarılıysa yeşil, hatalıysa kırmızı renkte kutu içinde görünür. 
+5.5 Dashboard.tsx – Ana Sayfa / Proje Listesi 
+Yolu: src/components/dashboard/Dashboard.tsx 
+Amaç: Kullanıcının oluşturduğu veya dahil olduğu projeleri ve en son oluşturulan görevleri 
+listelemek. 
+useEffect ve Verileri Çekme 
+tsx 
+useEffect(() => { 
+fetchDashboardData(); 
+}, [location.pathname, authLoading]); 
+● Dashboard sayfası her yüklendiğinde veya URL değiştiğinde veriler güncellenir. 
+● axios.get("/api/v1/projects") → Projeleri çeker 
+● axios.get("/api/v1/projects/recent-tasks") → Son 10 görevi çeker 
+Proje Kartları 
+Her proje kartı: 
+68 
+● Ad, açıklama, oluşturulma tarihi 
+● Durum etiketi (Active, Completed vb.) 
+● Toplam görev ve tamamlanan görev sayısı 
+● “View Board” → Proje panosuna yönlendirir 
+● “Delete” → Projeyi siler 
+handleCreateProject 
+tsx 
+const handleCreateProject = async (e: React.FormEvent) => { ... } 
+● Proje oluşturulduktan sonra: 
+○ API’ye POST isteği atılır. 
+○ Başarılıysa varsayılan sütunlar (To Do, In Progress, Done) otomatik olarak 
+oluşturulur. 
+○ Yeni proje projeler listesine eklenir. 
+Recent Tasks Tablosu 
+● recentTasks.map(...) ile tabloya yazılır. 
+69 
+● Her görev için: 
+○ Başlık, proje adı, durum, öncelik ve teslim tarihi gösterilir. 
+○ Durum ve öncelikler renklidir (Tailwind sınıfları ile) 
+Responsive Tasarım 
+● grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 → Proje kartları cihaz ekranına göre uyarlanır. 
+● overflow-x-auto → Tablo mobilde taşabilir hale gelir. 
+5.6 Navbar.tsx – Üst Menü 
+Yolu: src/components/layout/Navbar.tsx 
+Amaç: Kullanıcıya sayfalar arası gezinme imkânı sunar. Oturum açma durumuna göre menü 
+içerikleri değişir. 
+Kullanıcı Bilgisi ve Logout 
+tsx 
+const { user, logout } = useAuth(); 
+● Kullanıcı bilgileri (firstName) menüde gösterilir. 
+70 
+● “Logout” butonuna tıklandığında: AuthContext.logout() çağrılır → token ve user temizlenir. 
+Menü Linkleri 
+tsx 
+<Link to="/dashboard">Dashboard</Link> 
+<Link to="/logs">Activity Logs</Link> 
+<Link to="/profile">Profile</Link> 
+Tüm linkler React Router ile yönlendirme yapar. <Link> bileşeni kullanıldığı için sayfa yenilenmeden 
+geçiş yapılır. 
+Mobil Uyumluluk 
+● Küçük ekranlarda hamburger menüye dönüşür. 
+● menuOpen state’i ile mobil menünün açılıp kapanması kontrol edilir. 
+● Menü animasyonu Tailwind sınıflarıyla sağlanır. 
+Bu üç bileşen, kullanıcının uygulamaya giriş yaptıktan sonra en sık etkileşimde bulunduğu bölümler 
+olup; kullanıcı deneyimi, veri yönetimi ve güvenlik açısından kilit rol oynamaktadır. 
+5.7 ProjectBoard.tsx – Görev Panosu 
+71 
+Yolu: src/components/projects/ProjectBoard.tsx 
+Amaç: Belirli bir projeye ait görevleri, sütunlara göre ayrılmış şekilde (To Do, In Progress, Done vb.) 
+göstermek ve drag & drop (sürükle-bırak) ile taşımayı sağlamak. 
+Ana State'ler: 
+tsx 
+const [columns, setColumns] = useState<Column[]>([]); 
+const [tasks, setTasks] = useState<Task[]>([]); 
+const [loading, setLoading] = useState(true); 
+const [error, setError] = useState<string | null>(null); 
+● columns: Panodaki sütunları tutar (örnek: To Do, Done). 
+● tasks: Projeye ait tüm görevler. 
+● loading: Sayfa yüklenirken spinner gösterimi için. 
+● error: API hataları kullanıcıya göstermek için. 
+useEffect – İlk Yükleme 
+tsx 
+useEffect(() => { 
+72 
+if (!projectId) return; 
+fetchData(); 
+}, [projectId]); 
+● Sayfa ilk açıldığında veya proje ID değiştiğinde çalışır. 
+● axios.get("/api/v1/columns/project/${projectId}") ile sütunlar alınır. 
+● axios.get("/api/v1/tasks/project/${projectId}") ile görevler çekilir. 
+● Veri yoksa setError(...) ile hata mesajı gösterilir. 
+Görev Ekleme 
+Görev eklemek için aşağıdaki bileşenler ve işlemler kullanılır: 
+tsx 
+const handleAddTask = async (e: React.FormEvent) => { ... } 
+1. Formdan başlık, açıklama, öncelik, teslim tarihi ve sütun seçimi alınır. 
+2. POST isteği yapılır → /api/v1/tasks 
+3. Yanıttan dönen görev setTasks([...tasks, newTask]) ile listeye eklenir. 
+4. Form sıfırlanır ve modal kapanır. 
+73 
+Görev Güncelleme (Edit Modal) 
+tsx 
+const handleEditTask = async (e: React.FormEvent) => { ... } 
+● Güncellenecek görev bilgileri editTask state’inde tutulur. 
+● Form alanlarından alınan bilgilerle PUT isteği atılır. 
+● Dönen görev bilgileri setTasks() ile görev listesine yansıtılır. 
+Drag & Drop – onDragEnd 
+tsx 
+const onDragEnd = async (result: DropResult) => { ... } 
+1. Kullanıcı bir görevi başka sütuna taşıdığında tetiklenir. 
+2. draggableId kullanılarak görev bulunur. 
+3. destination.droppableId → Yeni sütun ID’si olarak alınır. 
+4. Görev columnId alanı güncellenerek PUT isteği yapılır. 
+5. setTasks() ile state güncellenir. 
+74 
+Bu sayede görevler sürüklenerek farklı aşamalara geçirilebilir. 
+JSX Yapısı: 
+● DragDropContext → Ana drag & drop kapsayıcısı 
+● Her sütun: 
+○ Droppable bileşeni ile tanımlanır 
+○ İçinde görevler Draggable olarak yerleştirilir 
+● Modal pencereler showModal, showEditModal state'leri ile kontrol edilir 
+Güvenlik ve Kararlılık Kontrolleri: 
+● Her görev ve sütun, typeof === 'object' && id ile kontrol edilir. 
+● Görev ID’si eksikse sürükleme işlemi engellenir. 
+● Aynı sütuna aynı görev sürüklenirse istek gönderilmez. 
+Kullanılan Tailwind Sınıfları: 
+● rounded-xl, bg-white, shadow-lg, hover:bg-blue-100 
+● Mobilde scroll destekli overflow-x-auto 
+75 
+● Görev önceliği ve durumu renkli etiketlerle gösterilir 
+Değerlendirme: 
+● Bu bileşen, proje yönetimi deneyimini zenginleştiren en temel parçadır. 
+● Kullanıcı dostu, interaktif ve görsel olarak ayrıştırılmış yapıdadır. 
+● Modern görev panosu deneyimi sunar. 
+● Görev düzenleme, silme, taşıma ve oluşturma tek sayfa üzerinden yönetilir. 
+5.8 ActivityLogs.tsx – Kullanıcı Hareket 
+Geçmişi 
+Yolu: src/components/logs/ActivityLogs.tsx 
+Amaç: Kullanıcının geçmişte yaptığı işlemleri (proje oluşturma, görev atama, şifre değiştirme, vs.) 
+zaman damgası ile birlikte listelemek. 
+useEffect – İlk Yükleme 
+tsx 
+useEffect(() => { 
+fetchLogs(); 
+76 
+}, [page, user]); 
+ 
+● Kullanıcı veya sayfa değiştiğinde loglar yeniden yüklenir. 
+ 
+● GET isteği: /api/v1/activity-logs?userId=${user.id}&page=${page} 
+ 
+ 
+API Yanıtı: 
+json 
+  
+{ 
+  "logs": [ 
+    { 
+      "id": "abc123", 
+      "action": "LOGIN", 
+      "entityType": "User", 
+      "entityId": "user1", 
+      "description": "User logged in", 
+      "timestamp": "2024-06-11T12:30:00Z" 
+    }, 
+    ... 
+  ], 
+  "totalPages": 3 
+77 
+} 
+JSX Yapısı: 
+● Her log kaydı listede gösterilir. 
+● Kullanıcı adı, açıklama, varlık türü ve zaman damgası etiketlerle belirtilir. 
+● Tailwind CSS sınıfları kullanılarak renkli rozetler oluşturulmuştur. 
+● formatTimestamp fonksiyonu ile tarih yerel biçime çevrilir. 
+Sayfalama 
+tsx 
+<button onClick={() => setPage(page - 1)} disabled={page === 1}>Previous</button> 
+... 
+<button onClick={() => setPage(page + 1)} disabled={page === totalPages}>Next</button> 
+● Toplam sayfa bilgisi totalPages üzerinden hesaplanır. 
+● Kullanıcı Previous ve Next ile sayfalar arası gezinebilir. 
+78 
+Güvenlik: 
+● Sadece oturum açmış kullanıcı loglara erişebilir. 
+● Kullanıcıya ait olmayan loglara erişim engellenir (backend tarafından). 
+Bu iki bileşen, projenin kullanıcı etkileşimlerini görsel ve etkileşimli bir biçimde sunmasını sağlar. 
+ProjectBoard.tsx sistemin operasyonel merkezidir, ActivityLogs.tsx ise tüm bu operasyonların 
+kayıtlarını arşivler. 
+5.9 AuthContext.tsx – Merkezi Kimlik 
+Yönetimi 
+Yolu: src/contexts/AuthContext.tsx 
+Amaç: Uygulama genelinde kullanıcı bilgilerini ve kimlik doğrulama işlemlerini yönetir. 
+Yapısı 
+tsx 
+const AuthContext = createContext<AuthContextType | undefined>(undefined); 
+● createContext(): Tüm bileşenlerin erişebileceği bir global kimlik bilgisi sağlayıcısı oluşturur. 
+● AuthContextType: Kullanıcı bilgisi, token, login/logout fonksiyonları ve loading durumunu 
+içerir. 
+79 
+Provider Bileşeni 
+tsx 
+export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => { ... } 
+● Uygulama App.tsx içinde bu provider’a sarılır. 
+● İçindeki tüm bileşenler useAuth() ile kimlik bilgilerine ulaşabilir. 
+State Değişkenleri 
+tsx 
+const [user, setUser] = useState<User | null>(null); 
+const [token, setToken] = useState<string | null>(localStorage.getItem('token')); 
+const [isLoading, setIsLoading] = useState(true); 
+● user: Kullanıcının tüm kimlik bilgileri 
+● token: JWT token 
+● isLoading: Uygulama açıldığında ilk yükleme sırasında true olur 
+80 
+useEffect – Token Yükleme 
+tsx 
+useEffect(() => { 
+if (token) { 
+axios.defaults.headers.common['Authorization'] = `Bearer ${token}`; 
+... 
+} 
+setIsLoading(false); 
+}, [token]); 
+● Eğer token varsa Axios’un header’ına otomatik olarak eklenir. 
+● user bilgisi localStorage’tan alınarak belleğe yüklenir. 
+Axios Interceptor 
+tsx 
+axios.interceptors.request.use((config) => { ... }) 
+● Tüm Axios isteklerinden önce çalışır. 
+81 
+● localStorage’da token varsa Authorization header’ına otomatik eklenir. 
+● Bu sayede her sayfada tekrar token eklemeye gerek kalmaz. 
+login(email, password) 
+● /api/v1/auth/login endpoint’ine POST isteği atılır. 
+● Gelen token ve user bilgisi: 
+○ localStorage’a yazılır 
+○ Axios’a entegre edilir 
+○ setToken() ve setUser() ile state’e atanır 
+register(email, password, firstName, lastName) 
+● /api/v1/auth/register endpoint’ine POST isteği atılır. 
+● Token dönmediği için login işlemi sonrasında yapılmalıdır. 
+logout() 
+● Token ve kullanıcı bilgisi localStorage’tan silinir. 
+● Axios header temizlenir. 
+82 
+● Global state sıfırlanır. 
+updateUser(userData) 
+● Profil güncellendiğinde state ve localStorage güncellenir. 
+Değerlendirme 
+● Tüm kimlik kontrolü tek bir merkezden yönetilir. 
+● Uygulama bileşenleri yalnızca useAuth() kullanarak kimlik bilgisine erişebilir. 
+● Modern, güvenli ve okunabilir bir yapı kurulmuştur. 
+5.10 Tailwind CSS Yapılandırması 
+Dosya: tailwind.config.js 
+js 
+module.exports = { 
+content: ["./src/**/*.{js,jsx,ts,tsx}"], 
+theme: { 
+extend: { 
+colors: { 
+83 
+primary: { 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8' } 
+} 
+} 
+}, 
+plugins: [], 
+} 
+● content: Tailwind’in hangi dosyaları tarayacağını belirtir. 
+● extend → özelleştirilmiş renk paletleri eklenmiştir. 
+● plugins: Ek Tailwind eklentileri için kullanılabilir (örnek: forms, typography) 
+Kullanım Örnekleri 
+html 
+<div className="bg-blue-600 text-white p-4 rounded-lg shadow-md"> 
+● Renk, tipografi, margin, padding gibi tüm stil özellikleri doğrudan class olarak verilir. 
+● Tailwind sayesinde CSS dosyası yazmaya gerek kalmadan stil tanımı yapılabilir. 
+84 
+5.11 Deployment (Docker + NGINX) 
+Frontend Dockerfile 
+Dockerfile 
+FROM node:18-alpine AS build 
+WORKDIR /app 
+COPY package*.json ./ 
+RUN npm install 
+COPY . . 
+RUN npm run build 
+● React uygulaması üretim için derlenir (/app/build dizinine). 
+Dockerfile 
+FROM nginx:alpine 
+COPY --from=build /app/build /usr/share/nginx/html 
+COPY nginx.conf /etc/nginx/nginx.conf 
+● Derlenen frontend dosyaları NGINX’e kopyalanır. 
+● Uygulama dışarıya EXPOSE 3000 portu üzerinden sunulur. 
+85 
+nginx.conf 
+nginx 
+location /api/ { 
+proxy_pass http://backend:8080; 
+} 
+● /api/ ile başlayan istekler backend servisine yönlendirilir. 
+● Bu sayede frontend ile backend farklı servislerde olsa bile tek URL üzerinden erişilebilir hale 
+gelir. 
+docker-compose.yml (özet) 
+yaml 
+services: 
+frontend: 
+build: . 
+ports: - "3000:3000" 
+backend: 
+86 
+build: ./backend 
+ports: - "8080:8080" 
+● Frontend ve backend ayrı konteynerler olarak çalıştırılır. 
+● Her biri izole edilmiştir, ancak ortak ağ üzerinde iletişim kurabilirler. 
+87 
+6. Genel Değerlendirme 
+Bu projede geliştirilen Task Management System, modern yazılım geliştirme ilkelerine tam uyumlu, 
+güvenli, modüler ve ölçeklenebilir bir mimari ile yapılandırılmıştır. 
+Öne Çıkan Özellikler: 
+● Katmanlı mimari (API, Application, Core, Infrastructure) 
+● JWT tabanlı authentication 
+● MongoDB ile esnek veri modeli 
+● React ile component-based frontend 
+● Tailwind CSS ile responsive UI 
+● Drag & Drop destekli görev yönetimi 
+● Serilog ve ActivityLog ile detaylı işlem takibi 
+● Docker + NGINX ile dağıtım ve servis yönetimi 
+Bu yapı, gerçek dünyada üretim ortamına alınabilecek kadar kararlı ve geliştirilmeye açık bir temel 
+sağlar. Projenin her bileşeni modüler olarak ayrılmış, sorumluluklar net biçimde tanımlanmış, 
+genişletilebilirlik göz önünde bulundurularak tasarlanmıştır. 
+88 
+SONUÇ ve DEĞERLENDİRME 
+Bu proje kapsamında geliştirilen görev yönetim sistemi, kullanıcıların birden fazla projeyi aynı anda 
+takip edebilmesine, görevlerin durumu ve önceliği gibi niteliklerine göre sınıflandırılmasına, 
+sürükle-bırak yöntemiyle görevlerin durumlar arasında taşınmasına ve tüm kullanıcı eylemlerinin 
+detaylı şekilde kayıt altına alınmasına olanak tanımaktadır. 
+Uygulamanın geliştirilme sürecinde katmanlı mimari kullanılarak yazılımın sürdürülebilirliği 
+artırılmış, kod tekrarı minimize edilmiş ve güvenlik ilkelerine uyulmuştur. Veritabanı olarak 
+MongoDB seçilerek JSON formatındaki verilerin rahatlıkla yönetilmesi sağlanmış; frontend kısmında 
+ise modern kullanıcı arayüzleri oluşturmak amacıyla React ve Tailwind CSS tercih edilmiştir. 
+Bu projenin tamamı Docker üzerinde konteynerleştirilmiş, API ile frontend arasında NGINX proxy 
+katmanı oluşturulmuştur. Elde edilen sonuçlar göstermiştir ki sistem; modüler, esnek ve kurumsal 
+ölçekte geliştirilebilir bir mimariye sahiptir. 
+89 
+KAYNAKÇA 
+1. Microsoft Docs – ASP.NET Core Documentation 
+https://docs.microsoft.com/en-us/aspnet/core/ 
+2. MongoDB Official Documentation 
+https://www.mongodb.com/docs/ 
+3. React Official Website 
+https://reactjs.org/ 
+4. Tailwind CSS Documentation 
+https://tailwindcss.com/docs 
+5. JSON Web Token (JWT) 
+https://jwt.io/ 
+6. Serilog Logging 
+https://serilog.net/ 
+7. Docker Documentation 
+https://docs.docker.com/ 
+8. NGINX Official Guide 
+https://nginx.org/ 
+9. react-beautiful-dnd 
+https://github.com/atlassian/react-beautiful-dnd 
+10. Stack Overflow & GitHub – Topluluk katkılı bilgiler ve örnekler 
+90 
+EKLER 
+EK-1: Kullanılan API Endpoint Listesi (Özet) 
+Endpoint 
+/api/v1/auth/register 
+/api/v1/auth/login 
+/api/v1/users/profile 
+/api/v1/projects 
+/api/v1/tasks/project/{projectId} 
+/api/v1/tasks 
+/api/v1/tasks/{id}/status 
+HTTP Açıklama 
+POST 
+POST 
+GET 
+GET 
+GET 
+POST 
+Kullanıcı kaydı 
+Giriş işlemi 
+Kullanıcı bilgilerini getirir 
+Kullanıcının projelerini getirir 
+Belirli projeye ait görevleri getirir 
+Yeni görev oluşturur 
+PATCH Görev durumunu günceller 
+/api/v1/activity-logs?userId=... 
+GET 
+EK-2: Kullanıcı Rollerinin Açıklaması 
+Rol 
+Açıklama 
+Kullanıcıya ait işlem loglarını getirir 
+91 
+Admin 
+Sistem yönetiminden sorumlu kullanıcı 
+Manager Projelerin sahibi olan ve görev atayabilen kullanıcı 
+User 
+Sadece atandığı görevleri görüntüleyip güncelleyebilir 
+EK-3: Enum Değerleri 
+● ProjectStatus: Active, Completed, OnHold, Cancelled 
+● ProjectTaskStatus: Todo, InProgress, Review, Done 
+● ProjectTaskPriority: Low, Medium, High, Critical 
+● UserRole: User, Manager, Admin 
+92 

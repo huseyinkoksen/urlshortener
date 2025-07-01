@@ -1,0 +1,369 @@
+URL Kısaltıcı ve Analitik Dashboard
+Web Tabanlı Uygulama Geliştirme Projesi
+
+Hazırlayan: Hüseyin Kökşen
+Numara: 20155817
+Üniversite: Mersin Üniversitesi
+Bölüm: Bilgisayar Mühendisliği
+Tarih: 2024-06-09
+
+1. GİRİŞ
+
+Günümüzde internet kullanıcılarının uzun ve karmaşık bağlantıları daha kısa, paylaşılabilir ve takip edilebilir hale getirme ihtiyacı artmıştır. Bu ihtiyaca yönelik geliştirilen "URL Kısaltıcı ve Analitik Dashboard" projesi, kullanıcıların uzun bağlantıları kolayca kısaltmasını, bu bağlantıların tıklanma istatistiklerini detaylı şekilde analiz etmesini ve kullanıcı yönetimini sağlamaktadır.
+
+Projenin temel amacı, kullanıcıların güvenli bir şekilde hesap oluşturup giriş yapabilmesini, kendi kısa bağlantılarını yönetebilmesini ve bu bağlantıların performansını gerçek zamanlı olarak izleyebilmesini sağlamaktır. Uygulama, modern web teknolojileriyle geliştirilmiş olup, hem backend hem de frontend tarafında güncel yaklaşımlar kullanılmıştır.
+
+2. ÖZET
+
+Bu çalışmada, kullanıcıların uzun URL'leri kısaltabildiği, tıklama analizlerini görebildiği ve kullanıcı yönetimi yapabildiği web tabanlı bir sistem geliştirilmiştir. Kimlik doğrulama işlemleri JWT ile sağlanmış, veri saklama için MongoDB tercih edilmiştir. Kullanıcı arayüzü ise HTML, CSS ve JavaScript ile oluşturulmuş, modern ve duyarlı bir tasarım hedeflenmiştir. Proje, Docker desteğiyle kolayca dağıtılabilir ve ölçeklenebilir bir yapı sunmaktadır.
+
+Sistem, kullanıcıların kendi hesaplarını oluşturmasına, giriş yapmasına, uzun bağlantıları kısaltmasına ve bu bağlantıların tıklanma istatistiklerini detaylı olarak görüntülemesine olanak tanır. Ayrıca, kullanıcı dostu bir dashboard ile tüm işlemler kolayca yönetilebilmektedir.
+
+[Şekil 1.1: Proje Ana Dashboard Ekranı Buraya Eklenecek]
+
+3. KULLANILAN TEKNOLOJİLER VE TEMEL KAVRAMLAR
+
+Bu projede kullanılan başlıca teknolojiler ve kavramlar şunlardır:
+
+- ASP.NET Core (Backend API): Modern, hızlı ve güvenli web API geliştirme platformu.
+- MongoDB (NoSQL Veritabanı): Esnek ve ölçeklenebilir veri saklama çözümü.
+- HTML/CSS/JS (Frontend Dashboard): Kullanıcı arayüzü için temel web teknolojileri.
+- JWT (Kimlik Doğrulama): Güvenli oturum yönetimi ve kullanıcı doğrulama.
+- Docker & Docker Compose (Dağıtım): Kolay kurulum ve dağıtım için konteyner teknolojisi.
+- PowerShell (Test Otomasyonu): Otomatik test ve doğrulama için betikler.
+
+Her bir teknoloji, projenin farklı bir ihtiyacına çözüm sunmakta ve sistemin bütünsel olarak modern web standartlarına uygun şekilde çalışmasını sağlamaktadır.
+
+4. İNTERNET PROGRAMLAMA TEMELLERİ VE AĞ (NETWORKING)
+
+Bu bölümde, projenin temelini oluşturan internet programlama kavramları ve ağ iletişimi detaylı olarak ele alınacaktır.
+
+4.1 İstemci-Sunucu Mimarisi
+
+Proje, klasik istemci-sunucu mimarisi üzerine kurulmuştur. Kullanıcılar (istemciler), web tarayıcıları üzerinden dashboard arayüzüne erişir ve burada gerçekleştirdikleri işlemler (kayıt, giriş, URL kısaltma, analiz görüntüleme vb.) HTTP protokolü üzerinden sunucuya (backend API) iletilir. Sunucu, gelen istekleri işler, gerekli veritabanı işlemlerini gerçekleştirir ve yanıtı tekrar istemciye döndürür.
+
+[Şekil 2.1: İstemci-Sunucu Mimarisi Şeması Buraya Eklenecek]
+
+4.2 HTTP İstek/Yanıt Döngüsü
+
+Kullanıcıdan gelen her işlem, bir HTTP isteği (GET, POST, PUT, DELETE) olarak backend API'ye iletilir. Sunucu, bu isteği işler ve uygun HTTP yanıtı ile istemciye geri döner. Örneğin, bir URL kısaltma isteği POST /shorten endpoint'ine gönderilir ve sunucu, oluşturulan kısa URL'yi JSON formatında yanıtlar.
+
+4.3 Ağ Protokolleri (TCP/IP, DNS, HTTPS)
+
+- TCP/IP: Tüm veri iletimi, güvenilir ve bağlantı tabanlı TCP/IP protokolü üzerinden gerçekleşir.
+- DNS: Kullanıcılar, sunucuya erişirken alan adlarını kullanır ve DNS sistemi bu adları IP adreslerine çevirir.
+- HTTPS: Proje, güvenli veri iletimi için HTTPS protokolünü destekleyecek şekilde yapılandırılmıştır. Böylece, kullanıcı ile sunucu arasındaki tüm veri şifreli olarak iletilir.
+
+4.4 Web Uygulamalarında Durum Bilgisi (Stateless) İletişiminin Yönetilmesi
+
+HTTP protokolü doğası gereği stateless (durumsuz) bir protokoldür. Yani, her istek bağımsızdır ve sunucu önceki isteklerle ilgili bilgi tutmaz. Bu projede, kullanıcı oturumları JWT token ile yönetilmekte, her istekte kullanıcı kimliği ve yetkisi token üzerinden doğrulanmaktadır. Böylece, güvenli ve ölçeklenebilir bir oturum yönetimi sağlanmaktadır.
+
+[Şekil 2.2: HTTP İstek/Yanıt Döngüsü ve JWT ile Oturum Yönetimi Şeması Buraya Eklenecek]
+
+4. SİSTEM MİMARİSİ VE PROJE YAPISI
+
+Proje, katmanlı mimari prensiplerine uygun olarak geliştirilmiştir. Backend tarafında API uç noktaları, servisler ve veri modelleri ayrı katmanlarda yapılandırılmıştır. Frontend ise bağımsız bir HTML dosyası olarak sunulmakta ve API ile iletişim kurmaktadır.
+
+5. TEMEL ÖZELLİKLER
+
+- URL Kısaltma ve Yönetimi
+- Tıklama Analitiği (Günlük, Haftalık, Aylık)
+- Kullanıcı Kayıt ve Giriş Sistemi
+- JWT ile Güvenli Kimlik Doğrulama
+- Oran Sınırlama (Rate Limiting)
+- Modern ve Duyarlı Dashboard Arayüzü
+
+6. SONUÇ
+
+Bu proje, modern web uygulama standartlarına uygun, güvenli ve kullanıcı dostu bir URL kısaltıcı ve analitik platform sunmaktadır. Geliştirilmeye açık mimarisi sayesinde yeni özellikler kolayca eklenebilir.
+
+5. VERSİYON KONTROLÜ
+
+Proje geliştirme sürecinde kodun güvenli ve düzenli bir şekilde yönetilebilmesi için Git versiyon kontrol sistemi kullanılmıştır. Git sayesinde, yapılan her değişiklik commit'ler ile kaydedilmiş, farklı özellikler için branch'ler oluşturulmuş ve takım çalışmasına uygun bir iş akışı benimsenmiştir.
+
+- Commit'ler: Her önemli değişiklik, anlamlı commit mesajları ile kaydedilmiştir.
+- Branching: Yeni özellikler veya hata düzeltmeleri için ayrı branch'ler açılmıştır.
+- Merging: Tamamlanan işler ana branch'e (main/master) merge edilmiştir.
+
+[Şekil 3.1: Git Commit ve Branch Yapısı Ekran Görüntüsü Buraya Eklenecek]
+
+6. UYGULAMA YAPISI & ASP.NET CORE
+
+Proje, net bir klasör ve dosya yapısı ile organize edilmiştir. Backend tarafında ASP.NET Core kullanılarak, controller'lar, modeller, servisler ve validatörler ayrı klasörlerde tutulmuştur. Bu yapı, kodun okunabilirliğini ve sürdürülebilirliğini artırmıştır.
+
+- Controllers: API uç noktalarını yöneten sınıflar.
+- Models: Veritabanı ve API için kullanılan veri modelleri.
+- Validators: Girdi doğrulama işlemlerini yöneten sınıflar.
+- Services: İş mantığı ve veritabanı işlemlerini yöneten servisler.
+
+[Şekil 3.2: Proje Klasör ve Dosya Yapısı Ekran Görüntüsü Buraya Eklenecek]
+
+ASP.NET Core'un sağladığı middleware altyapısı ile, isteklerin işlenme sırası ve uygulama genelinde geçerli olan işlemler (ör. hata yönetimi, kimlik doğrulama) kolayca yönetilmiştir.
+
+7. DEPENDENCY INJECTION (BAĞIMLILIK ENJEKSİYONU) & ROUTING
+
+Proje, gevşek bağlı (loosely coupled) ve test edilebilir bir yapı için dependency injection (DI) prensibini kullanmaktadır. ASP.NET Core'un yerleşik DI konteyneri ile, servisler ve repository'ler uygulama başlatılırken otomatik olarak enjekte edilmektedir.
+
+- Örnek: MongoDbService, Controller'lara DI ile aktarılmıştır.
+
+Routing (yönlendirme) ise attribute routing yöntemiyle yapılandırılmıştır. Her controller ve action, ilgili HTTP metoduna ve route'a uygun şekilde tanımlanmıştır.
+
+```csharp
+[ApiController]
+[Route("api/[controller]")]
+public class ShortenController : ControllerBase
+{
+    // ...
+}
+```
+
+8. İSTEKLERİN, YANITLARIN VE MODEL BINDING İŞLEMLERİNİN YÖNETİLMESİ
+
+API'ye gelen HTTP isteklerinde, header, query string, route parametreleri ve body verileri model binding ile otomatik olarak C# nesnelerine dönüştürülmektedir. Bu sayede, kullanıcıdan gelen veriler kolayca işlenebilmekte ve doğrulanabilmektedir.
+
+- Örnek: ShortenRequestDto modeli, POST /shorten endpoint'inde body'den otomatik olarak alınır.
+
+```csharp
+public class ShortenRequestDto
+{
+    public string OriginalUrl { get; set; }
+}
+```
+
+Yanıtlar ise genellikle JSON formatında döndürülmekte, başarılı ve hatalı durumlar için uygun HTTP status kodları kullanılmaktadır.
+
+[Şekil 3.3: Postman ile API İstek ve Yanıt Ekran Görüntüsü Buraya Eklenecek]
+
+9. VERİ DOĞRULAMA & API TASARIM KALIPLARI
+
+Kullanıcıdan gelen verilerin doğruluğu, FluentValidation kütüphanesi ile sağlanmaktadır. Her DTO için ayrı validatör sınıfları yazılmış, zorunlu alanlar, karakter uzunlukları ve özel kurallar tanımlanmıştır.
+
+- Örnek: ShortenRequestDtoValidator, orijinal URL'nin geçerli bir formatta olup olmadığını kontrol eder.
+
+API tasarımında ise kaynak odaklı (resource-oriented) REST prensipleri benimsenmiştir. Uç noktalar sade, anlaşılır ve genişletilebilir şekilde tasarlanmıştır. Sayfalama, filtreleme ve sıralama gibi gelişmiş API özellikleri de eklenmiştir.
+
+10. HATA YÖNETİMİ & LOGLAMA
+
+Uygulamada hata yönetimi için try-catch blokları ve global exception handler kullanılmıştır. Hatalar kullanıcıya anlamlı mesajlarla iletilmekte, sistemde ise detaylı olarak loglanmaktadır.
+
+- ILogger ve Serilog gibi loglama araçları ile, hata ve bilgi logları dosyaya ve/veya konsola kaydedilmektedir.
+- Hatalı isteklerde, kullanıcıya özel hata mesajı ve uygun HTTP status kodu (ör. 400, 404, 500) döndürülmektedir.
+
+[Şekil 3.4: Loglama ve Hata Yönetimi Ekran Görüntüsü Buraya Eklenecek]
+
+11. VERİTABANI ENTEGRASYONU & ORM KULLANIMI
+
+11.1 MongoDB ile Koleksiyon Tasarımı
+Proje kapsamında üç ana koleksiyon kullanılmıştır: Users, ShortUrls ve ClickAnalytics. Her koleksiyonun şeması C# modelleriyle birebir uyumludur.
+
+```csharp
+// Models/User.cs
+public class User
+{
+    public string Id { get; set; }
+    public string Username { get; set; }
+    public string PasswordHash { get; set; }
+}
+
+// Models/ShortUrl.cs
+public class ShortUrl
+{
+    public string Id { get; set; }
+    public string OriginalUrl { get; set; }
+    public string ShortCode { get; set; }
+    public string UserId { get; set; }
+    public DateTime CreatedAt { get; set; }
+}
+
+// Models/ClickAnalytics.cs
+public class ClickAnalytics
+{
+    public string Id { get; set; }
+    public string ShortUrlId { get; set; }
+    public DateTime Timestamp { get; set; }
+    public string IpAddress { get; set; }
+    public string UserAgent { get; set; }
+}
+```
+
+11.2 MongoDB CRUD İşlemleri
+Aşağıda, bir kısa URL kaydının MongoDB'ye eklenmesi örneği verilmiştir:
+
+```csharp
+public async Task CreateShortUrlAsync(ShortUrl shortUrl)
+{
+    await _shortUrlsCollection.InsertOneAsync(shortUrl);
+}
+```
+
+11.3 Ekran Görüntüsü
+[Şekil 4.1.1: MongoDB Compass ile ShortUrls Koleksiyonu Görüntüsü Buraya Eklenecek]
+
+12. RESTFUL API TASARIMI & VERSİYONLAMA
+
+12.1 API Endpoint Örnekleri
+Aşağıda, projenin temel API uç noktaları ve örnek istek/yanıtları verilmiştir:
+
+- Kullanıcı Kaydı: `POST /register`
+- Giriş: `POST /login`
+- Kısa URL Oluşturma: `POST /shorten`
+- Tüm Linkleri Listeleme: `GET /dashboard/links`
+- Analitik: `GET /analytics/{shortCode}`
+
+Örnek: Kısa URL oluşturma isteği ve yanıtı
+
+İstek:
+```json
+{
+  "originalUrl": "https://www.example.com/uzun-link"
+}
+```
+Yanıt:
+```json
+{
+  "shortUrl": "http://localhost:5084/r/abc123"
+}
+```
+
+12.2 API Versiyonlama
+API versiyonlaması için route tabanlı bir yapı kullanılabilir:
+```csharp
+[Route("api/v1/[controller]")]
+```
+
+12.3 Ekran Görüntüsü
+[Şekil 4.2.1: Postman ile /shorten Endpoint'ine Yapılan İstek ve Yanıt Görüntüsü Buraya Eklenecek]
+
+13. KİMLİK DOĞRULAMA & YETKİLENDİRME
+
+13.1 JWT ile Kimlik Doğrulama
+Kullanıcı giriş yaptığında, backend tarafından aşağıdaki gibi bir JWT token üretilir:
+
+```csharp
+var token = new JwtSecurityToken(
+    issuer: "yourIssuer",
+    audience: "yourAudience",
+    claims: claims,
+    expires: DateTime.Now.AddDays(7),
+    signingCredentials: new SigningCredentials(key, SecurityAlgorithms.HmacSha256)
+);
+```
+
+13.2 Yetkilendirme
+Korumalı endpoint'lerde `[Authorize]` attribute'u kullanılır:
+```csharp
+[Authorize]
+[HttpGet("/dashboard")]
+public async Task<IActionResult> GetDashboard() { ... }
+```
+
+13.3 Ekran Görüntüsü
+[Şekil 4.3.1: JWT Token'ın Tarayıcıda localStorage'da Saklanması ve Korunan API'ye Erişim Denemesi Görüntüsü Buraya Eklenecek]
+
+14. ASENKRON PROGRAMLAMA & PERFORMANS OPTİMİZASYONU
+
+14.1 Asenkron Metot Kullanımı
+Tüm veritabanı işlemleri ve API çağrıları asenkron olarak yazılmıştır:
+
+```csharp
+public async Task<List<ShortUrl>> GetUserShortUrlsAsync(string userId)
+{
+    return await _shortUrlsCollection.Find(x => x.UserId == userId).ToListAsync();
+}
+```
+
+14.2 Performans Optimizasyonu
+- Gereksiz veri taşımamak için projection kullanılmıştır.
+- Sık erişilen veriler için in-memory cache (opsiyonel) uygulanabilir.
+
+14.3 Ekran Görüntüsü
+[Şekil 4.4.1: API Yanıt Süresi Analizi (ör. Postman veya tarayıcı Network tablosu) Görüntüsü Buraya Eklenecek]
+
+15. (OPSİYONEL) MİKROSERVİS MİMARİSİ
+
+15.1 Mikroservis Geçişi için Altyapı
+Proje şu an monolitik olsa da, aşağıdaki gibi mikroservis mimarisine uygun olarak bölünebilir:
+- Kullanıcı Servisi
+- URL Servisi
+- Analitik Servisi
+
+15.2 Ekran Görüntüsü
+[Şekil 4.5.1: Mikroservis Mimarisi Taslak Diyagramı Buraya Eklenecek]
+
+16. GÜVENLİK İÇİN EN İYİ UYGULAMALAR
+
+16.1 Parola Güvenliği
+Kullanıcı parolaları BCrypt ile hash'lenir:
+```csharp
+user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(plainPassword);
+```
+
+16.2 CORS ve Rate Limiting
+- Sadece belirli domainlerden erişim için CORS ayarlanır.
+- API'ye aşırı istekleri engellemek için rate limiting uygulanır.
+
+16.3 Girdi Doğrulama
+Tüm kullanıcı girdileri FluentValidation ile doğrulanır.
+
+16.4 Ekran Görüntüsü
+[Şekil 4.6.1: Hatalı Girişte Kullanıcıya Gösterilen Uyarı Mesajı Görüntüsü Buraya Eklenecek]
+
+17. DAĞITIM & CI/CD
+
+17.1 Docker ile Dağıtım
+Backend API için Dockerfile örneği:
+```dockerfile
+FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
+WORKDIR /app
+COPY . .
+ENTRYPOINT ["dotnet", "Urlshortener.Api.dll"]
+```
+
+17.2 docker-compose ile Çoklu Servis
+```yaml
+version: '3.4'
+services:
+  api:
+    build: ./Urlshortener.Api
+    ports:
+      - "5084:5084"
+  mongo:
+    image: mongo
+    ports:
+      - "27017:27017"
+```
+
+17.3 Ekran Görüntüsü
+[Şekil 4.7.1: Docker Desktop veya Komut Satırı ile Çalışan Konteynerler Görüntüsü Buraya Eklenecek]
+
+18. DOKÜMANTASYON & TEST
+
+18.1 API Dökümantasyonu
+API uç noktaları ve örnek istek/yanıtlar README.md ve Postman koleksiyonu ile belgelenmiştir.
+
+18.2 Otomatik Test
+PowerShell scripti ile test örneği:
+```powershell
+./test-dashboard.ps1
+```
+
+18.3 Manuel Test
+- Dashboard arayüzünde kullanıcı kaydı, giriş, link oluşturma ve analiz ekranları test edilmiştir.
+
+18.4 Ekran Görüntüsü
+[Şekil 4.8.1: Test Sonuçları ve Dashboard Arayüzü Test Ekranı Görüntüsü Buraya Eklenecek]
+
+19. EK GELİŞTİRMELER
+
+19.1 Gelecekte Eklenebilecek Özellikler
+- WebSocket ile gerçek zamanlı analiz
+- QR kod üretimi
+- Link süresi ve tıklama limiti
+- Tema ve dil seçenekleri
+
+19.2 Ekran Görüntüsü
+[Şekil 4.9.1: Gelişmiş Özellikler için Taslak Arayüz Görüntüsü Buraya Eklenecek]
+
+---
+
+Her bölümde gerçek ekran görüntüsü eklemeniz gerekmektedir. Lütfen ilgili ekranlarda (ör. MongoDB Compass, Postman, tarayıcı, Docker Desktop, dashboard.html) ekran görüntüsü alıp, rapora ekleyiniz.

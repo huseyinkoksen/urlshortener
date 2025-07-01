@@ -1,0 +1,10 @@
+bin/
+obj/
+.vs/
+.git/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+Dockerfile
+appsettings.Development.json 
