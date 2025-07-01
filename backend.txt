@@ -1,1 +1,2 @@
-Bu dosya, feature-backend branch'inde backend geliştirmesi için oluşturulmuştur. 
+Bu dosya, feature-backend branch'inde backend geliştirmesi için oluşturulmuştur.
+Kullanıcı modeli ve kimlik doğrulama servisi eklendi. 
