@@ -1,0 +1,1 @@
+Bu dosya, feature-frontend branch'inde frontend geliştirmesi için oluşturulmuştur. 
